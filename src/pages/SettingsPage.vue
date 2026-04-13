@@ -1,0 +1,206 @@
+<template>
+  <q-page class="q-pa-lg">
+    <!-- Header -->
+    <div class="text-h4 text-weight-bold q-mb-xs">Configuración</div>
+    <div class="text-body2 text-grey-6 q-mb-lg">Gestiona categorías y métodos de pago</div>
+
+    <!-- Categorías (full width) -->
+    <q-card flat bordered class="settings-card q-mb-lg">
+      <q-card-section>
+        <div class="row items-center justify-between q-mb-xs">
+          <div>
+            <div class="text-subtitle1 text-weight-bold">Categorías</div>
+            <div class="text-caption text-grey-6">Categorías disponibles para clasificar tus transacciones</div>
+          </div>
+          <q-btn
+            icon="add"
+            label="Nueva Categoría"
+            unelevated
+            color="dark"
+            size="sm"
+            class="q-px-md"
+            @click="showCategoryForm = true"
+          />
+        </div>
+
+        <div class="q-mt-md categories-grid">
+          <q-card
+            v-for="cat in settingsStore.categories"
+            :key="cat.id"
+            flat
+            bordered
+            class="category-item"
+          >
+            <q-card-section class="row items-center no-wrap q-py-sm q-px-md">
+              <div
+                class="cat-icon q-mr-md"
+                :style="{ backgroundColor: cat.color }"
+              >
+                <q-icon :name="cat.icon" color="white" size="18px" />
+              </div>
+              <div class="col text-body2 text-weight-medium">{{ cat.name }}</div>
+              <q-btn icon="more_vert" flat round dense size="sm" color="grey-6">
+                <q-menu anchor="bottom right" self="top right" auto-close>
+                  <q-list dense style="min-width: 140px">
+                    <q-item clickable @click="editCategory(cat)">
+                      <q-item-section avatar>
+                        <q-icon name="edit" size="16px" color="grey-7" />
+                      </q-item-section>
+                      <q-item-section>Modificar</q-item-section>
+                    </q-item>
+                    <q-separator />
+                    <q-item clickable @click="confirmDelete(cat)">
+                      <q-item-section avatar>
+                        <q-icon name="delete" size="16px" color="negative" />
+                      </q-item-section>
+                      <q-item-section class="text-negative">Eliminar</q-item-section>
+                    </q-item>
+                  </q-list>
+                </q-menu>
+              </q-btn>
+            </q-card-section>
+          </q-card>
+        </div>
+      </q-card-section>
+    </q-card>
+
+    <!-- Métodos de Pago -->
+    <q-card flat bordered class="settings-card q-mb-lg">
+      <q-card-section>
+        <div class="text-subtitle1 text-weight-bold q-mb-xs">Métodos de Pago</div>
+        <div class="text-caption text-grey-6 q-mb-md">
+          Opciones disponibles para registrar tus transacciones
+        </div>
+        <div class="column q-gutter-sm">
+          <q-card
+            v-for="account in accountsStore.accounts"
+            :key="account.id"
+            flat
+            bordered
+            class="payment-item"
+          >
+            <q-card-section class="row items-center no-wrap q-py-sm q-px-md">
+              <div class="col">
+                <div class="text-body2 text-weight-bold">{{ account.name }}</div>
+                <div class="text-caption text-grey-6">{{ typeLabel(account.type) }}</div>
+              </div>
+              <q-chip outline color="grey-7" text-color="grey-7" size="sm" class="q-ma-none">
+                {{ account.name }}
+              </q-chip>
+            </q-card-section>
+          </q-card>
+        </div>
+      </q-card-section>
+    </q-card>
+
+    <!-- Acerca de la Aplicación -->
+    <q-card flat bordered class="settings-card">
+      <q-card-section>
+        <div class="text-subtitle1 text-weight-bold q-mb-xs">Acerca de la Aplicación</div>
+        <div class="text-caption text-grey-6 q-mb-md">Administrador de Finanzas Personales</div>
+        <p class="text-body2 text-grey-7 q-mb-md">
+          Esta aplicación te permite llevar un control completo de tus finanzas personales,
+          registrando ingresos y gastos, visualizando tus cuentas y analizando tus hábitos
+          de consumo a través de gráficas interactivas.
+        </p>
+        <div class="text-body2"><span class="text-weight-bold">Versión:</span> 1.0.0</div>
+        <div class="text-body2"><span class="text-weight-bold">Fecha:</span> Abril 2026</div>
+      </q-card-section>
+    </q-card>
+
+    <!-- Dialog: Nueva / Editar Categoría -->
+    <CategoryForm v-model="showCategoryForm" :category="selectedCategory" />
+
+    <!-- Confirmación eliminar -->
+    <q-dialog v-model="showConfirm">
+      <q-card style="min-width: 320px">
+        <q-card-section>
+          <div class="text-h6">Eliminar categoría</div>
+          <div class="text-body2 q-mt-sm text-grey-7">
+            ¿Estás seguro que deseas eliminar <strong>{{ toDelete?.name }}</strong>?
+            Esta acción no se puede deshacer.
+          </div>
+        </q-card-section>
+        <q-card-actions align="right">
+          <q-btn flat label="Cancelar" v-close-popup />
+          <q-btn flat label="Eliminar" color="negative" @click="handleDelete" />
+        </q-card-actions>
+      </q-card>
+    </q-dialog>
+  </q-page>
+</template>
+
+<script setup>
+import { ref, watch } from 'vue'
+import { useSettingsStore } from 'src/stores/settings.store'
+import { useAccountsStore } from 'src/stores/accounts.store'
+import CategoryForm from 'src/components/categories/CategoryForm.vue'
+
+const settingsStore = useSettingsStore()
+const accountsStore = useAccountsStore()
+
+const showCategoryForm = ref(false)
+const selectedCategory = ref(null)
+const showConfirm = ref(false)
+const toDelete = ref(null)
+
+function editCategory(cat) {
+  selectedCategory.value = cat
+  showCategoryForm.value = true
+}
+
+watch(showCategoryForm, (val) => {
+  if (!val) selectedCategory.value = null
+})
+
+function confirmDelete(cat) {
+  toDelete.value = cat
+  showConfirm.value = true
+}
+
+function handleDelete() {
+  settingsStore.deleteCategory(toDelete.value.id)
+  showConfirm.value = false
+  toDelete.value = null
+}
+
+const typeLabels = {
+  tarjeta_credito: 'Tarjeta de Crédito',
+  tarjeta_debito:  'Tarjeta de Débito',
+  efectivo:        'Dinero en efectivo',
+}
+
+function typeLabel(type) {
+  return typeLabels[type] ?? type
+}
+</script>
+
+<style scoped>
+.settings-card {
+  border-radius: 12px;
+}
+
+.categories-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+}
+
+.category-item {
+  border-radius: 8px;
+}
+
+.cat-icon {
+  width: 38px;
+  height: 38px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.payment-item {
+  border-radius: 8px;
+}
+</style>

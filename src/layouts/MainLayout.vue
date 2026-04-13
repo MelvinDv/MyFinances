@@ -1,43 +1,35 @@
 <template>
-  <q-layout view="lHh Lpr lFf">
-    <q-header elevated>
-      <q-toolbar>
-        <q-btn
-          flat
+  <q-layout view="hHh lpR fFf">
+    <q-header bordered class="bg-white text-dark">
+      <!-- Fila 1: Logo -->
+      <div class="q-px-lg q-pt-md q-pb-sm row items-center">
+        <q-icon name="account_balance_wallet" size="22px" color="dark" class="q-mr-xs" />
+        <span class="text-weight-bold text-dark" style="font-size: 16px">MyFinances</span>
+      </div>
+
+      <!-- Fila 2: Tabs -->
+      <div class="navbar-tabs-row q-px-lg q-pb-sm">
+        <q-tabs
+          v-model="activeTab"
+          active-color="dark"
+          indicator-color="transparent"
+          align="left"
           dense
-          round
-          icon="menu"
-          aria-label="Menu"
-          @click="toggleLeftDrawer"
-        />
-
-        <q-toolbar-title>
-          Quasar App
-        </q-toolbar-title>
-
-        <div>Quasar v{{ $q.version }}</div>
-      </q-toolbar>
-    </q-header>
-
-    <q-drawer
-      v-model="leftDrawerOpen"
-      show-if-above
-      bordered
-    >
-      <q-list>
-        <q-item-label
-          header
+          class="navbar-tabs"
+          no-caps
         >
-          Essential Links
-        </q-item-label>
-
-        <EssentialLink
-          v-for="link in linksList"
-          :key="link.title"
-          v-bind="link"
-        />
-      </q-list>
-    </q-drawer>
+          <q-tab
+            v-for="tab in tabs"
+            :key="tab.name"
+            :name="tab.name"
+            :icon="tab.icon"
+            :label="tab.label"
+            class="navbar-tab q-mr-xs"
+            @click="$router.push(tab.route)"
+          />
+        </q-tabs>
+      </div>
+    </q-header>
 
     <q-page-container>
       <router-view />
@@ -46,57 +38,74 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
-import EssentialLink from 'components/EssentialLink.vue'
+import { ref, watch } from 'vue'
+import { useRoute } from 'vue-router'
 
-const linksList = [
-  {
-    title: 'Docs',
-    caption: 'quasar.dev',
-    icon: 'school',
-    link: 'https://quasar.dev'
-  },
-  {
-    title: 'Github',
-    caption: 'github.com/quasarframework',
-    icon: 'code',
-    link: 'https://github.com/quasarframework'
-  },
-  {
-    title: 'Discord Chat Channel',
-    caption: 'chat.quasar.dev',
-    icon: 'chat',
-    link: 'https://chat.quasar.dev'
-  },
-  {
-    title: 'Forum',
-    caption: 'forum.quasar.dev',
-    icon: 'record_voice_over',
-    link: 'https://forum.quasar.dev'
-  },
-  {
-    title: 'Twitter',
-    caption: '@quasarframework',
-    icon: 'rss_feed',
-    link: 'https://twitter.quasar.dev'
-  },
-  {
-    title: 'Facebook',
-    caption: '@QuasarFramework',
-    icon: 'public',
-    link: 'https://facebook.quasar.dev'
-  },
-  {
-    title: 'Quasar Awesome',
-    caption: 'Community Quasar projects',
-    icon: 'favorite',
-    link: 'https://awesome.quasar.dev'
-  }
+const route = useRoute()
+
+const tabs = [
+  { name: 'transactions', label: 'Transacciones', icon: 'grid_view', route: '/' },
+  { name: 'analysis', label: 'Análisis', icon: 'trending_up', route: '/analisis' },
+  { name: 'accounts', label: 'Cuentas', icon: 'credit_card', route: '/cuentas' },
+  { name: 'settings', label: 'Configuración', icon: 'settings', route: '/configuracion' },
 ]
 
-const leftDrawerOpen = ref(false)
-
-function toggleLeftDrawer () {
-  leftDrawerOpen.value = !leftDrawerOpen.value
+const routeTabMap = {
+  '/': 'transactions',
+  '/analisis': 'analysis',
+  '/cuentas': 'accounts',
+  '/configuracion': 'settings',
 }
+
+const activeTab = ref(routeTabMap[route.path] ?? 'transactions')
+
+watch(
+  () => route.path,
+  (path) => {
+    activeTab.value = routeTabMap[path] ?? 'transactions'
+  },
+)
 </script>
+
+<style lang="scss">
+.navbar-tabs-row {
+  background: white;
+}
+
+.navbar-tabs {
+  .navbar-tab {
+    border-radius: 8px;
+    min-height: 34px;
+    padding: 0 12px;
+    font-size: 13px;
+    color: #666;
+    transition: background 0.2s;
+
+    .q-tab__content {
+      flex-direction: row;
+      gap: 6px;
+    }
+
+    .q-tab__icon {
+      font-size: 16px;
+      margin-bottom: 0;
+    }
+
+    .q-tab__label {
+      font-size: 13px;
+      line-height: 1;
+      text-transform: capitalize;
+    }
+
+    &.q-tab--active {
+      background: #f0f0f0;
+      color: #111;
+      font-weight: 600;
+    }
+
+    &:hover:not(.q-tab--active) {
+      background: #f8f8f8;
+    }
+  }
+}
+</style>
