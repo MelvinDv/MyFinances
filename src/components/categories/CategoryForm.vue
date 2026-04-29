@@ -6,8 +6,12 @@
       <q-card-section class="q-pb-xs">
         <div class="row items-start justify-between">
           <div>
-            <div class="text-h6 text-weight-bold">{{ category ? 'Editar Categoría' : 'Nueva Categoría' }}</div>
-            <div class="text-caption text-grey-6">{{ category ? 'Modifica los datos de la categoría' : 'Agrega una nueva categoría para clasificar tus transacciones' }}</div>
+            <div class="text-h6 text-weight-bold">
+              {{ category ? $t('category_form.title_edit') : $t('category_form.title_new') }}
+            </div>
+            <div class="text-caption text-grey-6">
+              {{ category ? $t('category_form.subtitle_edit') : $t('category_form.subtitle_new') }}
+            </div>
           </div>
           <q-btn icon="close" flat round dense v-close-popup class="q-mt-xs" />
         </div>
@@ -17,19 +21,19 @@
 
         <!-- Nombre -->
         <div>
-          <div class="form-label">Nombre <span class="text-negative">*</span></div>
+          <div class="form-label">{{ $t('category_form.name') }} <span class="text-negative">*</span></div>
           <q-input
             v-model="form.name"
             outlined
             dense
-            placeholder="Ej: Viajes, Mascotas, Suscripciones"
+            :placeholder="$t('category_form.name_placeholder')"
             hide-bottom-space
           />
         </div>
 
         <!-- Ícono -->
         <div>
-          <div class="form-label">Ícono <span class="text-negative">*</span></div>
+          <div class="form-label">{{ $t('category_form.icon') }} <span class="text-negative">*</span></div>
           <q-select
             v-model="form.icon"
             :options="iconOptions"
@@ -60,7 +64,7 @@
 
         <!-- Color -->
         <div>
-          <div class="form-label">Color <span class="text-negative">*</span></div>
+          <div class="form-label">{{ $t('category_form.color') }} <span class="text-negative">*</span></div>
           <div class="color-grid">
             <button
               v-for="color in colorOptions"
@@ -84,8 +88,8 @@
               <q-icon :name="form.icon" color="white" size="20px" />
             </div>
             <div>
-              <div class="text-body2 text-weight-bold">Vista Previa</div>
-              <div class="text-caption text-grey-6">{{ form.name || 'Nombre de categoría' }}</div>
+              <div class="text-body2 text-weight-bold">{{ $t('category_form.preview') }}</div>
+              <div class="text-caption text-grey-6">{{ form.name || $t('category_form.name_placeholder_empty') }}</div>
             </div>
           </q-card-section>
         </q-card>
@@ -94,8 +98,13 @@
 
       <!-- Acciones -->
       <q-card-actions align="right" class="q-pa-md q-pt-sm">
-        <q-btn flat label="Cancelar" color="dark" v-close-popup />
-        <q-btn unelevated color="dark" :label="category ? 'Guardar Cambios' : 'Agregar Categoría'" @click="handleSubmit" />
+        <q-btn flat :label="$t('common.cancel')" color="dark" v-close-popup />
+        <q-btn
+          unelevated
+          color="dark"
+          :label="category ? $t('category_form.submit_edit') : $t('category_form.submit_new')"
+          @click="handleSubmit"
+        />
       </q-card-actions>
 
     </q-card>

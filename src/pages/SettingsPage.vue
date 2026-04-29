@@ -1,20 +1,20 @@
 <template>
   <q-page class="q-pa-lg">
     <!-- Header -->
-    <div class="text-h4 text-weight-bold q-mb-xs">Configuración</div>
-    <div class="text-body2 text-grey-6 q-mb-lg">Gestiona categorías y métodos de pago</div>
+    <div class="text-h4 text-weight-bold q-mb-xs">{{ $t('settings.title') }}</div>
+    <div class="text-body2 text-grey-6 q-mb-lg">{{ $t('settings.subtitle') }}</div>
 
     <!-- Categorías (full width) -->
     <q-card flat bordered class="settings-card q-mb-lg">
       <q-card-section>
         <div class="row items-center justify-between q-mb-xs">
           <div>
-            <div class="text-subtitle1 text-weight-bold">Categorías</div>
-            <div class="text-caption text-grey-6">Categorías disponibles para clasificar tus transacciones</div>
+            <div class="text-subtitle1 text-weight-bold">{{ $t('settings.categories') }}</div>
+            <div class="text-caption text-grey-6">{{ $t('settings.categories_subtitle') }}</div>
           </div>
           <q-btn
             icon="add"
-            label="Nueva Categoría"
+            :label="$t('settings.new_category')"
             unelevated
             color="dark"
             size="sm"
@@ -46,14 +46,14 @@
                       <q-item-section avatar>
                         <q-icon name="edit" size="16px" color="grey-7" />
                       </q-item-section>
-                      <q-item-section>Modificar</q-item-section>
+                      <q-item-section>{{ $t('common.edit') }}</q-item-section>
                     </q-item>
                     <q-separator />
                     <q-item clickable @click="confirmDelete(cat)">
                       <q-item-section avatar>
                         <q-icon name="delete" size="16px" color="negative" />
                       </q-item-section>
-                      <q-item-section class="text-negative">Eliminar</q-item-section>
+                      <q-item-section class="text-negative">{{ $t('common.delete') }}</q-item-section>
                     </q-item>
                   </q-list>
                 </q-menu>
@@ -67,10 +67,8 @@
     <!-- Métodos de Pago -->
     <q-card flat bordered class="settings-card q-mb-lg">
       <q-card-section>
-        <div class="text-subtitle1 text-weight-bold q-mb-xs">Métodos de Pago</div>
-        <div class="text-caption text-grey-6 q-mb-md">
-          Opciones disponibles para registrar tus transacciones
-        </div>
+        <div class="text-subtitle1 text-weight-bold q-mb-xs">{{ $t('settings.payment_methods') }}</div>
+        <div class="text-caption text-grey-6 q-mb-md">{{ $t('settings.payment_methods_subtitle') }}</div>
         <div class="column q-gutter-sm">
           <q-card
             v-for="account in accountsStore.accounts"
@@ -82,7 +80,7 @@
             <q-card-section class="row items-center no-wrap q-py-sm q-px-md">
               <div class="col">
                 <div class="text-body2 text-weight-bold">{{ account.name }}</div>
-                <div class="text-caption text-grey-6">{{ typeLabel(account.type) }}</div>
+                <div class="text-caption text-grey-6">{{ $t(`account_types.${account.type}`) }}</div>
               </div>
               <q-chip outline color="grey-7" text-color="grey-7" size="sm" class="q-ma-none">
                 {{ account.name }}
@@ -96,15 +94,11 @@
     <!-- Acerca de la Aplicación -->
     <q-card flat bordered class="settings-card">
       <q-card-section>
-        <div class="text-subtitle1 text-weight-bold q-mb-xs">Acerca de la Aplicación</div>
-        <div class="text-caption text-grey-6 q-mb-md">Administrador de Finanzas Personales</div>
-        <p class="text-body2 text-grey-7 q-mb-md">
-          Esta aplicación te permite llevar un control completo de tus finanzas personales,
-          registrando ingresos y gastos, visualizando tus cuentas y analizando tus hábitos
-          de consumo a través de gráficas interactivas.
-        </p>
-        <div class="text-body2"><span class="text-weight-bold">Versión:</span> 1.0.0</div>
-        <div class="text-body2"><span class="text-weight-bold">Fecha:</span> Abril 2026</div>
+        <div class="text-subtitle1 text-weight-bold q-mb-xs">{{ $t('settings.about') }}</div>
+        <div class="text-caption text-grey-6 q-mb-md">{{ $t('settings.about_subtitle') }}</div>
+        <p class="text-body2 text-grey-7 q-mb-md">{{ $t('settings.about_description') }}</p>
+        <div class="text-body2"><span class="text-weight-bold">{{ $t('common.version') }}:</span> 1.0.0</div>
+        <div class="text-body2"><span class="text-weight-bold">{{ $t('common.date') }}:</span> Abril 2026</div>
       </q-card-section>
     </q-card>
 
@@ -115,15 +109,15 @@
     <q-dialog v-model="showConfirm">
       <q-card style="min-width: 320px">
         <q-card-section>
-          <div class="text-h6">Eliminar categoría</div>
+          <div class="text-h6">{{ $t('settings.delete_category_title') }}</div>
           <div class="text-body2 q-mt-sm text-grey-7">
-            ¿Estás seguro que deseas eliminar <strong>{{ toDelete?.name }}</strong>?
-            Esta acción no se puede deshacer.
+            {{ $t('settings.delete_confirm') }} <strong>{{ toDelete?.name }}</strong>?
+            {{ $t('settings.delete_warning') }}
           </div>
         </q-card-section>
         <q-card-actions align="right">
-          <q-btn flat label="Cancelar" v-close-popup />
-          <q-btn flat label="Eliminar" color="negative" @click="handleDelete" />
+          <q-btn flat :label="$t('common.cancel')" v-close-popup />
+          <q-btn flat :label="$t('common.delete')" color="negative" @click="handleDelete" />
         </q-card-actions>
       </q-card>
     </q-dialog>
@@ -162,16 +156,6 @@ function handleDelete() {
   settingsStore.deleteCategory(toDelete.value.id)
   showConfirm.value = false
   toDelete.value = null
-}
-
-const typeLabels = {
-  tarjeta_credito: 'Tarjeta de Crédito',
-  tarjeta_debito:  'Tarjeta de Débito',
-  efectivo:        'Dinero en efectivo',
-}
-
-function typeLabel(type) {
-  return typeLabels[type] ?? type
 }
 </script>
 

@@ -6,8 +6,8 @@
       <q-card-section class="q-pb-xs sticky-header">
         <div class="row items-start justify-between">
           <div>
-            <div class="text-h6 text-weight-bold">Nueva Transacción</div>
-            <div class="text-caption text-grey-6">Agrega un nuevo ingreso o gasto a tu registro</div>
+            <div class="text-h6 text-weight-bold">{{ $t('transaction_form.title_new') }}</div>
+            <div class="text-caption text-grey-6">{{ $t('transaction_form.subtitle') }}</div>
           </div>
           <q-btn icon="close" flat round dense v-close-popup class="q-mt-xs" />
         </div>
@@ -17,28 +17,28 @@
 
         <!-- Tipo -->
         <div>
-          <div class="form-label">Tipo</div>
+          <div class="form-label">{{ $t('transaction_form.type') }}</div>
           <div class="type-toggle">
             <button
               class="type-btn"
               :class="{ active: form.type === 'gasto' }"
               @click="form.type = 'gasto'"
             >
-              Gasto
+              {{ $t('transaction_form.expense') }}
             </button>
             <button
               class="type-btn"
               :class="{ active: form.type === 'ingreso' }"
               @click="form.type = 'ingreso'"
             >
-              Ingreso
+              {{ $t('transaction_form.income') }}
             </button>
           </div>
         </div>
 
         <!-- Monto -->
         <div>
-          <div class="form-label">Monto <span class="text-negative">*</span></div>
+          <div class="form-label">{{ $t('transaction_form.amount') }} <span class="text-negative">*</span></div>
           <q-input
             v-model.number="form.amount"
             type="number"
@@ -52,7 +52,7 @@
 
         <!-- Categoría -->
         <div>
-          <div class="form-label">Categoría <span class="text-negative">*</span></div>
+          <div class="form-label">{{ $t('transaction_form.category') }} <span class="text-negative">*</span></div>
           <q-select
             v-model="form.category"
             :options="categories"
@@ -64,7 +64,7 @@
 
         <!-- Método de Pago -->
         <div>
-          <div class="form-label">Método de Pago <span class="text-negative">*</span></div>
+          <div class="form-label">{{ $t('transaction_form.payment_method') }} <span class="text-negative">*</span></div>
           <q-select
             v-model="form.account"
             :options="accountOptions"
@@ -77,7 +77,7 @@
 
         <!-- Fecha -->
         <div>
-          <div class="form-label">Fecha <span class="text-negative">*</span></div>
+          <div class="form-label">{{ $t('transaction_form.date') }} <span class="text-negative">*</span></div>
           <q-input
             v-model="form.date"
             outlined
@@ -104,13 +104,16 @@
 
         <!-- Descripción -->
         <div>
-          <div class="form-label">Descripción <span class="text-grey-5">(opcional)</span></div>
+          <div class="form-label">
+            {{ $t('transaction_form.description') }}
+            <span class="text-grey-5">{{ $t('transaction_form.description_optional') }}</span>
+          </div>
           <q-input
             v-model="form.description"
             type="textarea"
             outlined
             dense
-            placeholder="Detalles de la transacción..."
+            :placeholder="$t('transaction_form.description_placeholder')"
             rows="3"
             hide-bottom-space
           />
@@ -120,8 +123,8 @@
 
       <!-- Acciones -->
       <q-card-actions align="right" class="q-pa-md q-pt-sm sticky-footer">
-        <q-btn flat label="Cancelar" color="dark" v-close-popup />
-        <q-btn unelevated color="dark" label="Agregar Transacción" @click="handleSubmit" />
+        <q-btn flat :label="$t('common.cancel')" color="dark" v-close-popup />
+        <q-btn unelevated color="dark" :label="$t('transaction_form.submit')" @click="handleSubmit" />
       </q-card-actions>
 
     </q-card>
@@ -130,6 +133,7 @@
 
 <script setup>
 import { ref, computed } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { useTransactionsStore } from 'stores/transactions.store'
 import { useAccountsStore } from 'stores/accounts.store'
 import { useSettingsStore } from 'stores/settings.store'
@@ -137,23 +141,17 @@ import { useSettingsStore } from 'stores/settings.store'
 defineProps({ modelValue: Boolean })
 const emit = defineEmits(['update:modelValue'])
 
+const { t } = useI18n()
 const transactionsStore = useTransactionsStore()
 const accountsStore = useAccountsStore()
 const settingsStore = useSettingsStore()
-
-const typeLabels = {
-  tarjeta_debito:  'Tarjeta de Débito',
-  tarjeta_credito: 'Tarjeta de Crédito',
-  efectivo:        'Efectivo',
-  otro:            'Otro',
-}
 
 const categories = computed(() => settingsStore.categories.map(c => c.name))
 
 const accountOptions = computed(() =>
   accountsStore.accounts.map(a => ({
     ...a,
-    label: `${typeLabels[a.type]} (${a.name})`,
+    label: `${t(`account_types.${a.type}`)} (${a.name})`,
   }))
 )
 

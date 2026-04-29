@@ -6,8 +6,12 @@
       <q-card-section class="sticky-header q-pb-sm">
         <div class="row items-start justify-between">
           <div>
-            <div class="text-h6 text-weight-bold">{{ isEditing ? 'Modificar Cuenta' : 'Nueva Cuenta' }}</div>
-            <div class="text-caption text-grey-6">{{ isEditing ? 'Actualiza los datos de tu cuenta' : 'Agrega una nueva cuenta para administrar tu dinero' }}</div>
+            <div class="text-h6 text-weight-bold">
+              {{ isEditing ? $t('account_form.title_edit') : $t('account_form.title_new') }}
+            </div>
+            <div class="text-caption text-grey-6">
+              {{ isEditing ? $t('account_form.subtitle_edit') : $t('account_form.subtitle_new') }}
+            </div>
           </div>
           <q-btn icon="close" flat round dense v-close-popup class="q-mt-xs" />
         </div>
@@ -17,19 +21,19 @@
 
         <!-- Nombre de la Cuenta -->
         <div>
-          <div class="form-label">Nombre de la Cuenta <span class="text-negative">*</span></div>
+          <div class="form-label">{{ $t('account_form.account_name') }} <span class="text-negative">*</span></div>
           <q-input
             v-model="form.label"
             outlined
             dense
-            placeholder="Ej: Cuenta Bancaria Principal"
+            :placeholder="$t('account_form.account_name_placeholder')"
             hide-bottom-space
           />
         </div>
 
         <!-- Tipo de Cuenta -->
         <div>
-          <div class="form-label">Tipo de Cuenta <span class="text-negative">*</span></div>
+          <div class="form-label">{{ $t('account_form.account_type') }} <span class="text-negative">*</span></div>
           <q-select
             v-model="form.type"
             :options="accountTypes"
@@ -46,31 +50,31 @@
         <!-- Campos extra para TDC -->
         <template v-if="form.type === 'tarjeta_credito'">
           <div>
-            <div class="form-label">Día de corte <span class="text-negative">*</span></div>
+            <div class="form-label">{{ $t('account_form.cut_date') }} <span class="text-negative">*</span></div>
             <q-input
               v-model.number="form.cut_date"
               outlined
               dense
               type="number"
-              placeholder="Ej: 15"
-              hint="Día del mes en que se genera tu estado de cuenta"
+              :placeholder="$t('account_form.cut_date_placeholder')"
+              :hint="$t('account_form.cut_date_hint')"
               hide-bottom-space
             />
           </div>
           <div>
-            <div class="form-label">Último día de pago <span class="text-negative">*</span></div>
+            <div class="form-label">{{ $t('account_form.payment_due') }} <span class="text-negative">*</span></div>
             <q-input
               v-model.number="form.payment_due_date"
               outlined
               dense
               type="number"
-              placeholder="Ej: 5"
-              hint="Día del mes límite para pagar sin intereses"
+              :placeholder="$t('account_form.payment_due_placeholder')"
+              :hint="$t('account_form.payment_due_hint')"
               hide-bottom-space
             />
           </div>
           <div>
-            <div class="form-label">Crédito máximo <span class="text-negative">*</span></div>
+            <div class="form-label">{{ $t('account_form.credit_limit') }} <span class="text-negative">*</span></div>
             <q-input
               v-model.number="form.credit_limit"
               outlined
@@ -85,7 +89,7 @@
 
         <!-- Balance Inicial -->
         <div>
-          <div class="form-label">Balance Inicial <span class="text-negative">*</span></div>
+          <div class="form-label">{{ $t('account_form.initial_balance') }} <span class="text-negative">*</span></div>
           <q-input
             v-model.number="form.balance"
             outlined
@@ -93,14 +97,14 @@
             type="number"
             prefix="$"
             placeholder="0.00"
-            hint="Este es el saldo que tenías cuando empezaste a usar la aplicación"
+            :hint="$t('account_form.initial_balance_hint')"
             hide-bottom-space
           />
         </div>
 
         <!-- Color -->
         <div>
-          <div class="form-label">Color</div>
+          <div class="form-label">{{ $t('account_form.color') }}</div>
           <div class="row q-gutter-sm">
             <button
               v-for="color in colorOptions"
@@ -117,8 +121,13 @@
 
       <!-- Footer sticky -->
       <q-card-actions align="right" class="q-pa-md q-pt-sm sticky-footer">
-        <q-btn flat label="Cancelar" color="dark" v-close-popup />
-        <q-btn unelevated color="dark" :label="isEditing ? 'Guardar Cambios' : 'Agregar Cuenta'" @click="handleSubmit" />
+        <q-btn flat :label="$t('common.cancel')" color="dark" v-close-popup />
+        <q-btn
+          unelevated
+          color="dark"
+          :label="isEditing ? $t('account_form.submit_edit') : $t('account_form.submit_new')"
+          @click="handleSubmit"
+        />
       </q-card-actions>
 
     </q-card>
@@ -127,6 +136,7 @@
 
 <script setup>
 import { ref, computed, watch } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { useAccountsStore } from 'stores/accounts.store'
 
 const props = defineProps({
@@ -135,14 +145,15 @@ const props = defineProps({
 })
 const emit = defineEmits(['update:modelValue'])
 
+const { t } = useI18n()
 const accountsStore = useAccountsStore()
 
-const accountTypes = [
-  { value: 'tarjeta_debito',  label: 'Tarjeta de Débito' },
-  { value: 'tarjeta_credito', label: 'Tarjeta de Crédito' },
-  { value: 'efectivo',        label: 'Efectivo' },
-  { value: 'otro',            label: 'Otro' },
-]
+const accountTypes = computed(() => [
+  { value: 'tarjeta_debito',  label: t('account_types.tarjeta_debito') },
+  { value: 'tarjeta_credito', label: t('account_types.tarjeta_credito') },
+  { value: 'efectivo',        label: t('account_types.efectivo') },
+  { value: 'otro',            label: t('account_types.otro') },
+])
 
 const colorOptions = [
   '#2563eb', '#22c55e', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899', '#06b6d4',

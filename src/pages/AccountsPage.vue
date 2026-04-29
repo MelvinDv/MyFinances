@@ -4,15 +4,15 @@
     <!-- Encabezado -->
     <div class="row items-center justify-between q-mb-lg">
       <div>
-        <div class="text-h5 text-weight-bold">Cuentas</div>
-        <div class="text-caption text-grey-6">Resumen de tus cuentas y balances</div>
+        <div class="text-h5 text-weight-bold">{{ $t('accounts.title') }}</div>
+        <div class="text-caption text-grey-6">{{ $t('accounts.subtitle') }}</div>
       </div>
       <div class="row q-gutter-sm">
         <q-btn
           flat
           bordered
           :icon="hidden ? 'visibility' : 'visibility_off'"
-          :label="hidden ? 'Mostrar' : 'Ocultar'"
+          :label="hidden ? $t('accounts.show') : $t('accounts.hide')"
           color="dark"
           @click="hidden = !hidden"
         />
@@ -20,7 +20,7 @@
           unelevated
           color="dark"
           icon="add"
-          label="Nueva Cuenta"
+          :label="$t('accounts.new')"
           @click="showForm = true"
         />
       </div>
@@ -28,19 +28,19 @@
 
     <!-- Card Balance Total -->
     <q-card flat class="balance-card q-mb-lg q-pa-lg">
-      <div class="text-caption text-white" style="opacity: 0.8">Balance Total</div>
+      <div class="text-caption text-white" style="opacity: 0.8">{{ $t('accounts.total_balance') }}</div>
       <div class="text-h4 text-white text-weight-bold q-my-sm">
         {{ hidden ? '••••••' : formatCurrency(totalBalance) }}
       </div>
       <div class="row q-mt-md" style="gap: 80px">
         <div>
-          <div class="text-caption text-white" style="opacity: 0.8">Ingresos</div>
+          <div class="text-caption text-white" style="opacity: 0.8">{{ $t('accounts.income') }}</div>
           <div class="text-subtitle1 text-white text-weight-bold">
             {{ hidden ? '••••••' : formatCurrency(transactionsStore.totalIngresos) }}
           </div>
         </div>
         <div>
-          <div class="text-caption text-white" style="opacity: 0.8">Gastos</div>
+          <div class="text-caption text-white" style="opacity: 0.8">{{ $t('accounts.expenses') }}</div>
           <div class="text-subtitle1 text-white text-weight-bold">
             {{ hidden ? '••••••' : formatCurrency(transactionsStore.totalGastos) }}
           </div>
@@ -69,7 +69,7 @@
               </div>
               <div>
                 <div class="text-weight-bold" style="font-size: 14px">{{ account.label }}</div>
-                <div class="text-caption text-grey-5">{{ accountTypeLabel[account.type] }}</div>
+                <div class="text-caption text-grey-5">{{ $t(`account_types.${account.type}`) }}</div>
               </div>
             </div>
             <q-btn flat round dense icon="more_vert" color="grey-5" size="sm">
@@ -79,14 +79,14 @@
                     <q-item-section avatar>
                       <q-icon name="edit" size="16px" color="grey-7" />
                     </q-item-section>
-                    <q-item-section>Modificar</q-item-section>
+                    <q-item-section>{{ $t('common.edit') }}</q-item-section>
                   </q-item>
                   <q-separator />
                   <q-item clickable @click="confirmDelete(account)">
                     <q-item-section avatar>
                       <q-icon name="delete" size="16px" color="negative" />
                     </q-item-section>
-                    <q-item-section class="text-negative">Eliminar</q-item-section>
+                    <q-item-section class="text-negative">{{ $t('common.delete') }}</q-item-section>
                   </q-item>
                 </q-list>
               </q-menu>
@@ -97,7 +97,7 @@
           <div class="text-h5 text-weight-bold q-mb-xs">
             {{ hidden ? '••••••' : formatCurrency(account.balance) }}
           </div>
-          <div class="text-caption text-grey-5">Saldo disponible</div>
+          <div class="text-caption text-grey-5">{{ $t('accounts.available_balance') }}</div>
         </q-card-section>
       </q-card>
     </div>
@@ -109,15 +109,15 @@
     <q-dialog v-model="showConfirm">
       <q-card style="min-width: 320px">
         <q-card-section>
-          <div class="text-h6">Eliminar cuenta</div>
+          <div class="text-h6">{{ $t('accounts.delete_title') }}</div>
           <div class="text-body2 q-mt-sm text-grey-7">
-            ¿Estás seguro que deseas eliminar <strong>{{ toDelete?.label }}</strong>?
-            Esta acción no se puede deshacer.
+            {{ $t('accounts.delete_confirm') }} <strong>{{ toDelete?.label }}</strong>?
+            {{ $t('accounts.delete_warning') }}
           </div>
         </q-card-section>
         <q-card-actions align="right">
-          <q-btn flat label="Cancelar" v-close-popup />
-          <q-btn flat label="Eliminar" color="negative" @click="handleDelete" />
+          <q-btn flat :label="$t('common.cancel')" v-close-popup />
+          <q-btn flat :label="$t('common.delete')" color="negative" @click="handleDelete" />
         </q-card-actions>
       </q-card>
     </q-dialog>
@@ -129,10 +129,12 @@
 import { ref, computed, watch } from 'vue'
 import { useAccountsStore } from 'stores/accounts.store'
 import { useTransactionsStore } from 'stores/transactions.store'
+import { useCurrency } from 'src/composables/useCurrency'
 import AccountForm from 'components/accounts/AccountForm.vue'
 
 const accountsStore = useAccountsStore()
 const transactionsStore = useTransactionsStore()
+const { formatCurrency } = useCurrency()
 
 const hidden = ref(false)
 const showForm = ref(false)
@@ -155,19 +157,10 @@ function confirmDelete(account) {
   showConfirm.value = true
 }
 
-function handleDelete() {
-  accountsStore.accounts.splice(
-    accountsStore.accounts.findIndex(a => a.id === toDelete.value.id), 1
-  )
+async function handleDelete() {
+  await accountsStore.deleteAccount(toDelete.value.id)
   showConfirm.value = false
   toDelete.value = null
-}
-
-const accountTypeLabel = {
-  tarjeta_debito:  'Tarjeta de Débito',
-  tarjeta_credito: 'Tarjeta de Crédito',
-  efectivo:        'Efectivo',
-  otro:            'Otro',
 }
 
 const accountTypeIcon = {
@@ -181,9 +174,6 @@ const totalBalance = computed(() =>
   accountsStore.accounts.reduce((sum, a) => sum + a.balance, 0)
 )
 
-function formatCurrency(amount) {
-  return new Intl.NumberFormat('es-MX', { style: 'currency', currency: 'MXN' }).format(amount)
-}
 </script>
 
 <style scoped lang="scss">

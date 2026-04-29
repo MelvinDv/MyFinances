@@ -1,70 +1,10 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
+import { supabase } from 'src/lib/supabase'
 import { useAccountsStore } from './accounts.store'
 
 export const useTransactionsStore = defineStore('transactions', () => {
-  const transactions = ref([
-    {
-      id: '1',
-      account_id: '1',
-      account_name: 'TDD',
-      category: 'Otros',
-      type: 'ingreso',
-      amount: 5000.00,
-      description: 'Salario mensual',
-      date: '2026-03-31',
-    },
-    {
-      id: '2',
-      account_id: '1',
-      account_name: 'TDD',
-      category: 'Hogar',
-      type: 'gasto',
-      amount: 1200.00,
-      description: 'Renta',
-      date: '2026-04-01',
-    },
-    {
-      id: '3',
-      account_id: '2',
-      account_name: 'TDC',
-      category: 'Alimento',
-      type: 'gasto',
-      amount: 350.00,
-      description: 'Supermercado',
-      date: '2026-04-02',
-    },
-    {
-      id: '4',
-      account_id: '3',
-      account_name: 'Efectivo',
-      category: 'Transporte',
-      type: 'gasto',
-      amount: 80.00,
-      description: 'Gasolina',
-      date: '2026-04-04',
-    },
-    {
-      id: '5',
-      account_id: '1',
-      account_name: 'TDD',
-      category: 'Deudas',
-      type: 'gasto',
-      amount: 200.00,
-      description: 'Pago tarjeta',
-      date: '2026-04-05',
-    },
-    {
-      id: '6',
-      account_id: '2',
-      account_name: 'TDC',
-      category: 'Alimento',
-      type: 'gasto',
-      amount: 150.00,
-      description: 'Restaurante',
-      date: '2026-04-06',
-    },
-  ])
+  const transactions = ref([])
 
   const totalIngresos = computed(() =>
     transactions.value
@@ -80,25 +20,43 @@ export const useTransactionsStore = defineStore('transactions', () => {
 
   const balance = computed(() => totalIngresos.value - totalGastos.value)
 
-  function addTransaction(transaction) {
-    const accountsStore = useAccountsStore()
-    const newTransaction = {
-      ...transaction,
-      id: Date.now().toString(),
-    }
-    transactions.value.unshift(newTransaction)
-    accountsStore.updateBalance(transaction.account_id, transaction.amount, transaction.type)
+  async function fetchTransactions() {
+    const { data, error } = await supabase
+      .from('transactions')
+      .select('*')
+      .order('date', { ascending: false })
+    if (!error) transactions.value = data
   }
 
-  function deleteTransaction(id) {
+  async function addTransaction(transaction) {
+    const { data: { user } } = await supabase.auth.getUser()
+    const { data, error } = await supabase
+      .from('transactions')
+      .insert({ ...transaction, user_id: user.id })
+      .select()
+      .single()
+    if (error) return
+
+    transactions.value.unshift(data)
+    const accountsStore = useAccountsStore()
+    await accountsStore.updateBalance(transaction.account_id, transaction.amount, transaction.type)
+  }
+
+  async function deleteTransaction(id) {
     const index = transactions.value.findIndex(t => t.id === id)
     if (index === -1) return
+
     const transaction = transactions.value[index]
-    const accountsStore = useAccountsStore()
-    // Revertir el efecto en el saldo
-    accountsStore.updateBalance(transaction.account_id, transaction.amount,
-      transaction.type === 'ingreso' ? 'gasto' : 'ingreso')
+    const { error } = await supabase.from('transactions').delete().eq('id', id)
+    if (error) return
+
     transactions.value.splice(index, 1)
+    const accountsStore = useAccountsStore()
+    await accountsStore.updateBalance(
+      transaction.account_id,
+      transaction.amount,
+      transaction.type === 'ingreso' ? 'gasto' : 'ingreso',
+    )
   }
 
   return {
@@ -106,6 +64,7 @@ export const useTransactionsStore = defineStore('transactions', () => {
     totalIngresos,
     totalGastos,
     balance,
+    fetchTransactions,
     addTransaction,
     deleteTransaction,
   }
