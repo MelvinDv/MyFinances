@@ -12,7 +12,7 @@
         icon="add"
         :label="$t('transactions.new')"
         unelevated
-        @click="showForm = true"
+        @click="editingTransaction = null; showForm = true"
       />
     </div>
 
@@ -207,14 +207,34 @@
               >
                 Cuota {{ props.row.installment_month }}/{{ props.row.installment_total_months }}
               </q-chip>
+              <q-chip
+                v-if="props.row.recurring_transaction_id"
+                dense
+                size="xs"
+                color="purple-1"
+                text-color="purple-9"
+                icon="repeat"
+                class="q-ma-none"
+              >
+                {{ $t('recurring.badge') }}
+              </q-chip>
               <span>{{ props.row.description }}</span>
             </div>
           </q-td>
         </template>
 
-        <!-- Eliminar -->
+        <!-- Acciones -->
         <template #body-cell-actions="props">
           <q-td :props="props" auto-width>
+            <q-btn
+              v-if="!props.row.installment_plan_id"
+              flat
+              round
+              dense
+              icon="edit"
+              color="grey-5"
+              @click="startEdit(props.row)"
+            />
             <q-btn
               flat
               round
@@ -228,8 +248,8 @@
       </q-table>
     </q-card>
 
-    <!-- Modal: Nueva Transacción -->
-    <TransactionForm v-model="showForm" />
+    <!-- Modal: Nueva / Editar Transacción -->
+    <TransactionForm v-model="showForm" :transaction="editingTransaction" @update:model-value="onFormClose" />
 
     <!-- Confirmación eliminar -->
     <q-dialog v-model="showConfirm">
@@ -277,6 +297,17 @@ const settingsStore = useSettingsStore()
 const showForm = ref(false)
 const showConfirm = ref(false)
 const toDelete = ref(null)
+const editingTransaction = ref(null)
+
+function startEdit(transaction) {
+  editingTransaction.value = transaction
+  showForm.value = true
+}
+
+function onFormClose(val) {
+  showForm.value = val
+  if (!val) editingTransaction.value = null
+}
 
 // ── Filtros ───────────────────────────────────────────────────────────────────
 

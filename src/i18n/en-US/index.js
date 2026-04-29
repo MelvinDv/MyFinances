@@ -55,6 +55,7 @@ export default {
 
   transaction_form: {
     title_new: 'New Transaction',
+    title_edit: 'Edit Transaction',
     subtitle: 'Add a new income or expense to your record',
     type: 'Type',
     expense: 'Expense',
@@ -243,6 +244,26 @@ export default {
     summary_implied_rate: 'Approx. rate',
     delete_title: 'Delete installment purchase',
     delete_confirm: 'This will delete all {months} installments of this purchase. Continue?',
+  },
+
+  recurring: {
+    toggle_label:     'Recurring expense?',
+    tooltip:          'When enabled, this expense will be automatically registered every month on the selected day, without you having to do it manually.',
+    settings_title:   'Recurring Expenses',
+    settings_subtitle:'Expenses automatically generated each month',
+    empty:            'No recurring expenses registered',
+    edit_title:       'Edit Recurring Expense',
+    amount:           'Amount',
+    category:         'Category',
+    account:          'Account',
+    description:      'Description',
+    day_of_month:     'Day of month (1-28)',
+    day_hint:         'Day of the month this expense is charged',
+    day_label:        'Day {day} of each month',
+    badge:            'Recurring',
+    delete_title:     'Delete recurring expense',
+    delete_confirm:   'Stop auto-generating',
+    delete_warning:   'Already registered transactions will not be deleted.',
   },
 
   category_form: {

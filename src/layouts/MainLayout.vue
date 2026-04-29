@@ -85,16 +85,18 @@ import { useAuthStore } from 'src/stores/auth.store'
 import { useAccountsStore } from 'src/stores/accounts.store'
 import { useTransactionsStore } from 'src/stores/transactions.store'
 import { useSettingsStore } from 'src/stores/settings.store'
+import { useRecurringStore } from 'src/stores/recurring_transactions.store'
 
 const route = useRoute()
 const router = useRouter()
 const { t, locale } = useI18n()
 const $q = useQuasar()
 
-const authStore = useAuthStore()
-const accountsStore = useAccountsStore()
+const authStore         = useAuthStore()
+const accountsStore     = useAccountsStore()
 const transactionsStore = useTransactionsStore()
-const settingsStore = useSettingsStore()
+const settingsStore     = useSettingsStore()
+const recurringStore    = useRecurringStore()
 
 onMounted(async () => {
   // Aplicar preferencias guardadas
@@ -106,7 +108,11 @@ onMounted(async () => {
     accountsStore.fetchAccounts(),
     transactionsStore.fetchTransactions(),
     settingsStore.fetchCategories(),
+    recurringStore.fetchRecurring(),
   ])
+
+  // Auto-generar transacciones recurrentes vencidas este mes
+  await recurringStore.generateDueTransactions()
 })
 
 async function handleSignOut() {

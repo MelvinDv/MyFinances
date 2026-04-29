@@ -55,6 +55,7 @@ export default {
 
   transaction_form: {
     title_new: 'Nueva Transacción',
+    title_edit: 'Editar Transacción',
     subtitle: 'Agrega un nuevo ingreso o gasto a tu registro',
     type: 'Tipo',
     expense: 'Gasto',
@@ -243,6 +244,26 @@ export default {
     summary_implied_rate: 'Tasa aprox.',
     delete_title: 'Eliminar compra a meses',
     delete_confirm: 'Esto eliminará las {months} cuotas de esta compra. ¿Deseas continuar?',
+  },
+
+  recurring: {
+    toggle_label:     '¿Gasto recurrente?',
+    tooltip:          'Al activar esta opción, el gasto se registrará automáticamente cada mes en el día seleccionado, sin que tengas que hacerlo manualmente.',
+    settings_title:   'Gastos Recurrentes',
+    settings_subtitle:'Gastos que se generan automáticamente cada mes',
+    empty:            'No hay gastos recurrentes registrados',
+    edit_title:       'Editar Gasto Recurrente',
+    amount:           'Monto',
+    category:         'Categoría',
+    account:          'Cuenta',
+    description:      'Descripción',
+    day_of_month:     'Día del mes (1-28)',
+    day_hint:         'Día del mes en que se cobra este gasto',
+    day_label:        'Día {day} de cada mes',
+    badge:            'Recurrente',
+    delete_title:     'Eliminar gasto recurrente',
+    delete_confirm:   '¿Dejar de generar automáticamente',
+    delete_warning:   'Las transacciones ya registradas no se eliminarán.',
   },
 
   category_form: {

@@ -64,6 +64,57 @@
       </q-card-section>
     </q-card>
 
+    <!-- Gastos Recurrentes -->
+    <q-card flat bordered class="settings-card q-mb-lg">
+      <q-card-section>
+        <div class="text-subtitle1 text-weight-bold q-mb-xs">{{ $t('recurring.settings_title') }}</div>
+        <div class="text-caption text-grey-6 q-mb-md">{{ $t('recurring.settings_subtitle') }}</div>
+
+        <div v-if="recurringStore.recurring.length === 0" class="text-body2 text-grey-5 text-center q-py-md">
+          {{ $t('recurring.empty') }}
+        </div>
+
+        <div class="column q-gutter-sm">
+          <q-card
+            v-for="r in recurringStore.recurring"
+            :key="r.id"
+            flat
+            bordered
+            class="payment-item"
+          >
+            <q-card-section class="row items-center no-wrap q-py-sm q-px-md">
+              <q-icon name="repeat" color="grey-6" size="20px" class="q-mr-md" />
+              <div class="col" style="min-width: 0">
+                <div class="text-body2 text-weight-bold ellipsis">{{ r.description || r.category }}</div>
+                <div class="text-caption text-grey-6">
+                  {{ formatCurrency(r.amount) }} · {{ $t('recurring.day_label', { day: r.day_of_month }) }} · {{ r.account_name }}
+                </div>
+              </div>
+              <q-btn icon="more_vert" flat round dense size="sm" color="grey-6">
+                <q-menu anchor="bottom right" self="top right" auto-close>
+                  <q-list dense style="min-width: 140px">
+                    <q-item clickable @click="editRecurring(r)">
+                      <q-item-section avatar>
+                        <q-icon name="edit" size="16px" color="grey-7" />
+                      </q-item-section>
+                      <q-item-section>{{ $t('common.edit') }}</q-item-section>
+                    </q-item>
+                    <q-separator />
+                    <q-item clickable @click="confirmDeleteRecurring(r)">
+                      <q-item-section avatar>
+                        <q-icon name="delete" size="16px" color="negative" />
+                      </q-item-section>
+                      <q-item-section class="text-negative">{{ $t('common.delete') }}</q-item-section>
+                    </q-item>
+                  </q-list>
+                </q-menu>
+              </q-btn>
+            </q-card-section>
+          </q-card>
+        </div>
+      </q-card-section>
+    </q-card>
+
     <!-- Métodos de Pago -->
     <q-card flat bordered class="settings-card q-mb-lg">
       <q-card-section>
@@ -105,7 +156,10 @@
     <!-- Dialog: Nueva / Editar Categoría -->
     <CategoryForm v-model="showCategoryForm" :category="selectedCategory" />
 
-    <!-- Confirmación eliminar -->
+    <!-- Dialog: Editar Recurrente -->
+    <RecurringForm v-model="showRecurringForm" :recurring="selectedRecurring" />
+
+    <!-- Confirmación eliminar categoría -->
     <q-dialog v-model="showConfirm">
       <q-card style="min-width: 320px">
         <q-card-section>
@@ -121,6 +175,24 @@
         </q-card-actions>
       </q-card>
     </q-dialog>
+
+    <!-- Confirmación eliminar recurrente -->
+    <q-dialog v-model="showConfirmRecurring">
+      <q-card style="min-width: 320px">
+        <q-card-section>
+          <div class="text-h6">{{ $t('recurring.delete_title') }}</div>
+          <div class="text-body2 q-mt-sm text-grey-7">
+            {{ $t('recurring.delete_confirm') }}
+            <strong>{{ toDeleteRecurring?.description || toDeleteRecurring?.category }}</strong>?
+            {{ $t('recurring.delete_warning') }}
+          </div>
+        </q-card-section>
+        <q-card-actions align="right">
+          <q-btn flat :label="$t('common.cancel')" v-close-popup />
+          <q-btn flat :label="$t('common.delete')" color="negative" @click="handleDeleteRecurring" />
+        </q-card-actions>
+      </q-card>
+    </q-dialog>
   </q-page>
 </template>
 
@@ -128,15 +200,21 @@
 import { ref, watch } from 'vue'
 import { useSettingsStore } from 'src/stores/settings.store'
 import { useAccountsStore } from 'src/stores/accounts.store'
+import { useRecurringStore } from 'src/stores/recurring_transactions.store'
+import { useCurrency } from 'src/composables/useCurrency'
 import CategoryForm from 'src/components/categories/CategoryForm.vue'
+import RecurringForm from 'src/components/recurring/RecurringForm.vue'
 
-const settingsStore = useSettingsStore()
-const accountsStore = useAccountsStore()
+const settingsStore  = useSettingsStore()
+const accountsStore  = useAccountsStore()
+const recurringStore = useRecurringStore()
+const { formatCurrency } = useCurrency()
 
+// ── Categorías ────────────────────────────────────────────────────────────────
 const showCategoryForm = ref(false)
 const selectedCategory = ref(null)
-const showConfirm = ref(false)
-const toDelete = ref(null)
+const showConfirm      = ref(false)
+const toDelete         = ref(null)
 
 function editCategory(cat) {
   selectedCategory.value = cat
@@ -156,6 +234,32 @@ function handleDelete() {
   settingsStore.deleteCategory(toDelete.value.id)
   showConfirm.value = false
   toDelete.value = null
+}
+
+// ── Recurrentes ───────────────────────────────────────────────────────────────
+const showRecurringForm    = ref(false)
+const selectedRecurring    = ref(null)
+const showConfirmRecurring = ref(false)
+const toDeleteRecurring    = ref(null)
+
+function editRecurring(r) {
+  selectedRecurring.value = r
+  showRecurringForm.value = true
+}
+
+watch(showRecurringForm, (val) => {
+  if (!val) selectedRecurring.value = null
+})
+
+function confirmDeleteRecurring(r) {
+  toDeleteRecurring.value = r
+  showConfirmRecurring.value = true
+}
+
+async function handleDeleteRecurring() {
+  await recurringStore.deleteRecurring(toDeleteRecurring.value.id)
+  showConfirmRecurring.value = false
+  toDeleteRecurring.value = null
 }
 </script>
 

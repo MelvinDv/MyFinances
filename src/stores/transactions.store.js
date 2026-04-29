@@ -92,6 +92,43 @@ export const useTransactionsStore = defineStore('transactions', () => {
     await accountsStore.updateBalance(plan.account_id, plan.total_amount, 'gasto')
   }
 
+  async function updateTransaction(id, updates, original) {
+    const { data, error } = await supabase
+      .from('transactions')
+      .update(updates)
+      .eq('id', id)
+      .select()
+      .single()
+    if (error) return
+
+    const index = transactions.value.findIndex(t => t.id === id)
+    if (index !== -1) transactions.value.splice(index, 1, data)
+
+    // Re-ordenar por fecha si cambió
+    transactions.value = [...transactions.value]
+      .sort((a, b) => b.date.localeCompare(a.date))
+
+    const accountsStore = useAccountsStore()
+
+    if (original.type === 'transferencia') {
+      // Revertir transferencia vieja
+      await accountsStore.updateBalance(original.account_id,             original.amount, 'ingreso')
+      await accountsStore.updateBalance(original.destination_account_id, original.amount, 'gasto')
+      // Aplicar transferencia nueva
+      await accountsStore.updateBalance(data.account_id,             data.amount, 'gasto')
+      await accountsStore.updateBalance(data.destination_account_id, data.amount, 'ingreso')
+    } else {
+      // Revertir balance viejo
+      await accountsStore.updateBalance(
+        original.account_id,
+        original.amount,
+        original.type === 'ingreso' ? 'gasto' : 'ingreso',
+      )
+      // Aplicar balance nuevo
+      await accountsStore.updateBalance(data.account_id, data.amount, data.type)
+    }
+  }
+
   async function deleteTransaction(id) {
     const index = transactions.value.findIndex(t => t.id === id)
     if (index === -1) return
@@ -193,6 +230,7 @@ export const useTransactionsStore = defineStore('transactions', () => {
     balance,
     fetchTransactions,
     addTransaction,
+    updateTransaction,
     addInstallmentPlan,
     addTransfer,
     deleteTransaction,

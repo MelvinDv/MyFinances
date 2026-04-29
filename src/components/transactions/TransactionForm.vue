@@ -6,7 +6,9 @@
       <q-card-section class="q-pb-xs sticky-header">
         <div class="row items-start justify-between">
           <div>
-            <div class="text-h6 text-weight-bold">{{ $t('transaction_form.title_new') }}</div>
+            <div class="text-h6 text-weight-bold">
+              {{ isEditMode ? $t('transaction_form.title_edit') : $t('transaction_form.title_new') }}
+            </div>
             <div class="text-caption text-grey-6">{{ $t('transaction_form.subtitle') }}</div>
           </div>
           <q-btn icon="close" flat round dense v-close-popup class="q-mt-xs" />
@@ -22,21 +24,24 @@
             <button
               class="type-btn"
               :class="{ active: form.type === 'gasto' }"
-              @click="form.type = 'gasto'"
+              :disabled="isEditMode"
+              @click="!isEditMode && (form.type = 'gasto')"
             >
               {{ $t('transaction_form.expense') }}
             </button>
             <button
               class="type-btn"
               :class="{ active: form.type === 'ingreso' }"
-              @click="form.type = 'ingreso'"
+              :disabled="isEditMode"
+              @click="!isEditMode && (form.type = 'ingreso')"
             >
               {{ $t('transaction_form.income') }}
             </button>
             <button
               class="type-btn"
               :class="{ active: form.type === 'transferencia' }"
-              @click="form.type = 'transferencia'"
+              :disabled="isEditMode"
+              @click="!isEditMode && (form.type = 'transferencia')"
             >
               {{ $t('transaction_form.transfer') }}
             </button>
@@ -108,8 +113,30 @@
           </div>
         </template>
 
-        <!-- Sección de meses (solo TDC + gasto) -->
-        <div v-if="isCredit && form.type === 'gasto'" class="installment-wrapper">
+        <!-- Gasto recurrente (solo gasto, no cuotas, no edición) -->
+        <div v-if="form.type === 'gasto' && !isEditMode" class="installment-wrapper">
+          <div class="row items-center no-wrap">
+            <q-toggle
+              v-model="form.recurring"
+              :label="$t('recurring.toggle_label')"
+              color="dark"
+              dense
+            />
+            <q-icon
+              name="help_outline"
+              size="16px"
+              color="grey-5"
+              class="q-ml-xs cursor-pointer"
+            >
+              <q-tooltip max-width="220px" anchor="top middle" self="bottom middle">
+                {{ $t('recurring.tooltip') }}
+              </q-tooltip>
+            </q-icon>
+          </div>
+        </div>
+
+        <!-- Sección de meses (solo TDC + gasto + no recurrente) -->
+        <div v-if="isCredit && form.type === 'gasto' && !form.recurring && !isEditMode" class="installment-wrapper">
           <q-toggle
             v-model="form.installment.enabled"
             :label="$t('installments.toggle_label')"
@@ -287,7 +314,7 @@
         <q-btn
           unelevated
           color="dark"
-          :label="isTransfer ? $t('transaction_form.submit_transfer') : $t('transaction_form.submit')"
+          :label="isEditMode ? $t('common.save') : isTransfer ? $t('transaction_form.submit_transfer') : $t('transaction_form.submit')"
           @click="handleSubmit"
         />
       </q-card-actions>
@@ -300,18 +327,25 @@
 import { ref, computed, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useTransactionsStore } from 'stores/transactions.store'
+import { useRecurringStore } from 'stores/recurring_transactions.store'
 import { useAccountsStore } from 'stores/accounts.store'
 import { useSettingsStore } from 'stores/settings.store'
 import { useCurrency } from 'src/composables/useCurrency'
 
-defineProps({ modelValue: Boolean })
+const props = defineProps({
+  modelValue:  { type: Boolean, default: false },
+  transaction: { type: Object,  default: null },
+})
 const emit = defineEmits(['update:modelValue'])
+
+const isEditMode = computed(() => !!props.transaction)
 
 const { t } = useI18n()
 const { formatCurrency } = useCurrency()
 const transactionsStore = useTransactionsStore()
-const accountsStore = useAccountsStore()
-const settingsStore = useSettingsStore()
+const recurringStore    = useRecurringStore()
+const accountsStore     = useAccountsStore()
+const settingsStore     = useSettingsStore()
 
 const categories = computed(() => settingsStore.categories.map(c => c.name))
 
@@ -348,9 +382,41 @@ const defaultForm = () => ({
   toAccount:   accountOptions.value[1] ?? null,
   date:        new Date().toISOString().split('T')[0],
   installment: defaultInstallment(),
+  recurring:   false,
 })
 
+function formFromTransaction(tx) {
+  if (!tx) return defaultForm()
+
+  if (tx.type === 'transferencia') {
+    return {
+      ...defaultForm(),
+      type:        'transferencia',
+      amount:      tx.amount,
+      date:        tx.date,
+      description: tx.description ?? '',
+      fromAccount: accountOptions.value.find(a => a.id === tx.account_id) ?? null,
+      toAccount:   accountOptions.value.find(a => a.id === tx.destination_account_id) ?? null,
+    }
+  }
+
+  return {
+    ...defaultForm(),
+    type:        tx.type,
+    amount:      tx.amount,
+    date:        tx.date,
+    description: tx.description ?? '',
+    category:    tx.category,
+    account:     accountOptions.value.find(a => a.id === tx.account_id) ?? null,
+  }
+}
+
 const form = ref(defaultForm())
+
+// Pre-llenar al abrir en modo edición
+watch(() => props.modelValue, (open) => {
+  if (open) form.value = formFromTransaction(props.transaction)
+})
 
 const isTransfer = computed(() => form.value.type === 'transferencia')
 const isCredit   = computed(() => form.value.account?.type === 'tarjeta_credito')
@@ -405,8 +471,13 @@ function formatDateDisplay(dateStr) {
   })
 }
 
-function handleSubmit() {
+async function handleSubmit() {
   if (!form.value.amount || form.value.amount <= 0) return
+
+  if (isEditMode.value) {
+    await handleUpdate()
+    return
+  }
 
   if (isTransfer.value) {
     if (!form.value.fromAccount || !form.value.toAccount) return
@@ -421,6 +492,33 @@ function handleSubmit() {
     })
   } else {
     if (!form.value.category || !form.value.account) return
+
+    if (form.value.recurring) {
+      const dayOfMonth = new Date(form.value.date + 'T00:00:00').getDate()
+      await recurringStore.addRecurring(
+        {
+          type:         form.value.type,
+          amount:       form.value.amount,
+          category:     form.value.category,
+          account_id:   form.value.account.id,
+          account_name: form.value.account.name,
+          description:  form.value.description,
+          day_of_month: dayOfMonth,
+        },
+        {
+          type:         form.value.type,
+          amount:       form.value.amount,
+          description:  form.value.description,
+          category:     form.value.category,
+          account_id:   form.value.account.id,
+          account_name: form.value.account.name,
+          date:         form.value.date,
+        },
+      )
+      form.value = defaultForm()
+      emit('update:modelValue', false)
+      return
+    }
 
     const isInstallment = form.value.installment.enabled && isCredit.value
 
@@ -461,6 +559,37 @@ function handleSubmit() {
   }
 
   form.value = defaultForm()
+  emit('update:modelValue', false)
+}
+
+async function handleUpdate() {
+  const tx = props.transaction
+  let updates
+
+  if (isTransfer.value) {
+    if (!form.value.fromAccount || !form.value.toAccount) return
+    updates = {
+      amount:                   form.value.amount,
+      date:                     form.value.date,
+      description:              form.value.description,
+      account_id:               form.value.fromAccount.id,
+      account_name:             form.value.fromAccount.name ?? form.value.fromAccount.label,
+      destination_account_id:   form.value.toAccount.id,
+      destination_account_name: form.value.toAccount.name ?? form.value.toAccount.label,
+    }
+  } else {
+    if (!form.value.category || !form.value.account) return
+    updates = {
+      amount:       form.value.amount,
+      date:         form.value.date,
+      description:  form.value.description,
+      category:     form.value.category,
+      account_id:   form.value.account.id,
+      account_name: form.value.account.name ?? form.value.account.label,
+    }
+  }
+
+  await transactionsStore.updateTransaction(tx.id, updates, tx)
   emit('update:modelValue', false)
 }
 </script>
