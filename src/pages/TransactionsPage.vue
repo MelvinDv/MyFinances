@@ -94,6 +94,21 @@
             </template>
           </q-input>
 
+          <!-- Buscador -->
+          <q-input
+            v-model="filters.search"
+            :placeholder="$t('transactions.search_placeholder')"
+            outlined
+            dense
+            clearable
+            hide-bottom-space
+            style="min-width: 190px"
+          >
+            <template #prepend>
+              <q-icon name="search" color="grey-5" />
+            </template>
+          </q-input>
+
           <!-- Limpiar filtros -->
           <q-btn
             v-if="hasActiveFilters"
@@ -326,6 +341,7 @@ const filters = ref({
   account:   null,
   category:  null,
   dateRange: currentMonthRange(),
+  search:    '',
 })
 
 const typeOptions = computed(() => [
@@ -349,6 +365,7 @@ const hasActiveFilters = computed(() => {
     filters.value.type !== 'all' ||
     filters.value.account ||
     filters.value.category ||
+    filters.value.search ||
     !range ||
     range.from !== from ||
     range.to !== to
@@ -356,19 +373,25 @@ const hasActiveFilters = computed(() => {
 })
 
 function clearFilters() {
-  filters.value = { type: 'all', account: null, category: null, dateRange: currentMonthRange() }
+  filters.value = { type: 'all', account: null, category: null, dateRange: currentMonthRange(), search: '' }
 }
 
 // ── Transacciones filtradas ───────────────────────────────────────────────────
 
 const filteredTransactions = computed(() => {
-  const range = filters.value.dateRange
+  const range  = filters.value.dateRange
+  const search = filters.value.search?.toLowerCase().trim()
   return store.transactions.filter(t => {
     if (filters.value.type !== 'all' && t.type !== filters.value.type) return false
     if (filters.value.account && t.account_name !== filters.value.account) return false
     if (filters.value.category && t.category !== filters.value.category) return false
     if (range?.from && t.date < range.from) return false
     if (range?.to   && t.date > range.to)   return false
+    if (search) {
+      const haystack = [t.description, t.category, t.account_name, t.destination_account_name]
+        .filter(Boolean).join(' ').toLowerCase()
+      if (!haystack.includes(search)) return false
+    }
     return true
   })
 })

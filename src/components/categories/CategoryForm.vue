@@ -78,6 +78,34 @@
           </div>
         </div>
 
+        <!-- Presupuesto mensual (opcional) -->
+        <div>
+          <div class="form-label">
+            {{ $t('category_form.budget') }}
+            <span class="text-grey-5">{{ $t('common.optional') }}</span>
+            <q-icon
+              name="help_outline"
+              size="14px"
+              color="grey-5"
+              class="q-ml-xs cursor-pointer"
+            >
+              <q-tooltip max-width="210px" anchor="top middle" self="bottom middle">
+                {{ $t('category_form.budget_tooltip') }}
+              </q-tooltip>
+            </q-icon>
+          </div>
+          <q-input
+            v-model.number="form.budget"
+            type="number"
+            outlined
+            dense
+            prefix="$"
+            :placeholder="$t('category_form.budget_placeholder')"
+            hide-bottom-space
+            clearable
+          />
+        </div>
+
         <!-- Vista Previa -->
         <q-card flat class="preview-card">
           <q-card-section class="row items-center q-gutter-md q-py-sm q-px-md">
@@ -152,16 +180,17 @@ const iconOptions = [
 ]
 
 const defaultForm = () => ({
-  name:  '',
-  icon:  'more_horiz',
-  color: colorOptions[0],
+  name:   '',
+  icon:   'more_horiz',
+  color:  colorOptions[0],
+  budget: null,
 })
 
 const form = ref(defaultForm())
 
 function resetForm() {
   form.value = props.category
-    ? { name: props.category.name, icon: props.category.icon, color: props.category.color }
+    ? { name: props.category.name, icon: props.category.icon, color: props.category.color, budget: props.category.budget ?? null }
     : defaultForm()
 }
 
@@ -172,18 +201,17 @@ watch(() => props.modelValue, (val) => {
 function handleSubmit() {
   if (!form.value.name.trim()) return
 
+  const payload = {
+    name:   form.value.name.trim(),
+    icon:   form.value.icon,
+    color:  form.value.color,
+    budget: form.value.budget || null,
+  }
+
   if (props.category) {
-    settingsStore.updateCategory(props.category.id, {
-      name:  form.value.name.trim(),
-      icon:  form.value.icon,
-      color: form.value.color,
-    })
+    settingsStore.updateCategory(props.category.id, payload)
   } else {
-    settingsStore.addCategory({
-      name:  form.value.name.trim(),
-      icon:  form.value.icon,
-      color: form.value.color,
-    })
+    settingsStore.addCategory(payload)
   }
 
   emit('update:modelValue', false)

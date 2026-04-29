@@ -65,22 +65,19 @@ export const useRecurringStore = defineStore('recurring', () => {
     const today     = now.getDate()
     const yearMonth = now.toISOString().slice(0, 7) // 'YYYY-MM'
 
-    // Verificar cuáles ya se generaron este mes
-    const { data: existing } = await supabase
-      .from('transactions')
-      .select('recurring_transaction_id')
-      .not('recurring_transaction_id', 'is', null)
-      .gte('date', `${yearMonth}-01`)
-      .lte('date', `${yearMonth}-31`)
-
-    const generatedIds = new Set((existing || []).map(t => t.recurring_transaction_id))
-
     const transactionsStore = useTransactionsStore()
 
+    // Usar las transacciones ya cargadas en el store — no hacer otra query a Supabase
+    const generatedIds = new Set(
+      transactionsStore.transactions
+        .filter(t => t.recurring_transaction_id && t.date.startsWith(yearMonth))
+        .map(t => t.recurring_transaction_id)
+    )
+
     for (const template of recurring.value) {
-      if (!template.active)                 continue
-      if (template.day_of_month > today)    continue
-      if (generatedIds.has(template.id))    continue
+      if (!template.active)              continue
+      if (template.day_of_month > today) continue
+      if (generatedIds.has(template.id)) continue
 
       const lastDay = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate()
       const day     = Math.min(template.day_of_month, lastDay)

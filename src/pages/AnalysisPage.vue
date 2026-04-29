@@ -147,25 +147,50 @@
         </q-card>
       </div>
 
-      <!-- Progress bars: Mayores Gastos -->
+      <!-- Progress bars: Presupuesto por Categoría -->
       <div class="col-12 col-md-6">
         <q-card flat bordered class="analysis-card">
           <q-card-section>
-            <div class="text-subtitle1 text-weight-bold">{{ $t('analysis.top_expenses') }}</div>
-            <div class="text-caption text-grey-6 q-mb-md">{{ $t('analysis.top_categories') }}</div>
+            <div class="text-subtitle1 text-weight-bold">{{ $t('analysis.budget_title') }}</div>
+            <div class="text-caption text-grey-6 q-mb-md">{{ $t('analysis.budget_subtitle') }}</div>
             <div v-if="topExpenses.length" class="column q-gutter-md">
               <div v-for="item in topExpenses" :key="item.category">
-                <div class="row justify-between q-mb-xs">
-                  <span class="text-body2 text-weight-medium">{{ item.category }}</span>
-                  <span class="text-body2">{{ formatCurrency(item.amount) }}</span>
+                <div class="row justify-between items-center q-mb-xs">
+                  <div class="row items-center q-gutter-xs">
+                    <span class="text-body2 text-weight-medium">{{ item.category }}</span>
+                    <q-chip
+                      v-if="item.budget && item.overBudget"
+                      dense
+                      size="xs"
+                      color="red-1"
+                      text-color="red-9"
+                      class="q-ma-none"
+                    >
+                      {{ $t('analysis.over_budget') }}
+                    </q-chip>
+                  </div>
+                  <div class="text-right">
+                    <span class="text-body2 text-weight-bold" :class="item.budget && item.overBudget ? 'text-negative' : ''">
+                      {{ formatCurrency(item.amount) }}
+                    </span>
+                    <span v-if="item.budget" class="text-caption text-grey-5">
+                      / {{ formatCurrency(item.budget) }}
+                    </span>
+                  </div>
                 </div>
                 <q-linear-progress
                   :value="item.ratio"
                   size="8px"
                   rounded
                   class="progress-bar"
-                  :style="{ '--bar-color': item.color }"
+                  :style="{ '--bar-color': item.barColor }"
                 />
+                <div v-if="item.budget" class="text-caption q-mt-xs" :class="item.overBudget ? 'text-negative' : 'text-grey-5'">
+                  {{ item.overBudget
+                    ? $t('analysis.exceeded_by', { amount: formatCurrency(item.amount - item.budget) })
+                    : $t('analysis.remaining', { amount: formatCurrency(item.budget - item.amount) })
+                  }}
+                </div>
               </div>
             </div>
             <div v-else class="empty-chart text-grey-5 text-body2">{{ $t('analysis.no_expenses') }}</div>
@@ -382,9 +407,29 @@ const accountBarOptions = computed(() => ({
   legend: { show: false },
 }))
 
-// ── Mayores Gastos ────────────────────────────────────────────────────────────
+// ── Presupuesto por Categoría ─────────────────────────────────────────────────
 
-const topExpenses = computed(() => gastosPorCategoria.value)
+const topExpenses = computed(() => {
+  const maxAmount = Math.max(...gastosPorCategoria.value.map(g => g.amount), 1)
+
+  return gastosPorCategoria.value.map(item => {
+    const cat        = settingsStore.categories.find(c => c.name === item.category)
+    const budget     = cat?.budget ?? null
+    const overBudget = budget !== null && item.amount > budget
+    const pct        = budget !== null
+      ? Math.min(item.amount / budget, 1)
+      : item.amount / maxAmount
+
+    let barColor = item.color
+    if (budget !== null) {
+      if (overBudget)          barColor = '#ef4444'
+      else if (pct >= 0.8)     barColor = '#f59e0b'
+      else                     barColor = '#10b981'
+    }
+
+    return { ...item, budget, overBudget, ratio: pct, barColor }
+  })
+})
 </script>
 
 <style scoped>
