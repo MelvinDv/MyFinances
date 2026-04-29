@@ -38,7 +38,7 @@
               >
                 <q-icon :name="cat.icon" color="white" size="18px" />
               </div>
-              <div class="col text-body2 text-weight-medium">{{ cat.name }}</div>
+              <div class="col cat-name text-body2 text-weight-medium">{{ cat.name }}</div>
               <q-btn icon="more_vert" flat round dense size="sm" color="grey-6">
                 <q-menu anchor="bottom right" self="top right" auto-close>
                   <q-list dense style="min-width: 140px">
@@ -166,12 +166,28 @@ function handleDelete() {
 
 .categories-grid {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(2, 1fr);
   gap: 8px;
+  overflow: hidden;
+}
+
+@media (min-width: 600px) {
+  .categories-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
 }
 
 .category-item {
   border-radius: 8px;
+  min-width: 0;
+  overflow: hidden;
+}
+
+.cat-name {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .cat-icon {
