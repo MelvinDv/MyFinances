@@ -32,7 +32,7 @@ export const useAccountsStore = defineStore('accounts', () => {
       .single()
     if (!error) {
       const index = accounts.value.findIndex(a => a.id === id)
-      if (index !== -1) accounts.value[index] = data
+      if (index !== -1) accounts.value.splice(index, 1, data)
     }
   }
 

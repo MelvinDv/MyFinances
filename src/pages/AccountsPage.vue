@@ -95,15 +95,86 @@
 
           <!-- Balance -->
           <div class="text-h5 text-weight-bold q-mb-xs">
-            {{ hidden ? '••••••' : formatCurrency(account.balance) }}
+            {{ hidden ? '••••••' : formatCurrency(account.type === 'tarjeta_credito' && account.credit_limit
+              ? account.credit_limit - creditDebt(account)
+              : account.balance) }}
           </div>
           <div class="text-caption text-grey-5">{{ $t('accounts.available_balance') }}</div>
+
+          <!-- Sección TDC: próximo pago de cuotas -->
+          <template v-if="account.type === 'tarjeta_credito'">
+            <q-separator class="q-my-md" />
+
+            <template v-if="nextInstallmentPayment(account)">
+              <div class="row items-center justify-between">
+                <div>
+                  <div class="text-caption text-grey-5">{{ $t('accounts.next_payment') }}</div>
+                  <div
+                    class="text-subtitle1 text-weight-bold"
+                    :class="isPaymentUrgent(account) ? 'text-negative' : 'text-dark'"
+                  >
+                    {{ hidden ? '••••••' : formatCurrency(nextInstallmentPayment(account).amount) }}
+                  </div>
+                  <div
+                    v-if="nextInstallmentPayment(account).alreadyPaid > 0"
+                    class="text-caption text-positive"
+                  >
+                    Abonado: {{ formatCurrency(nextInstallmentPayment(account).alreadyPaid) }}
+                  </div>
+                </div>
+                <div class="text-right">
+                  <div class="text-caption text-grey-5">{{ $t('accounts.due') }}</div>
+                  <div class="text-caption text-weight-medium">
+                    {{ formatDueDate(nextInstallmentPayment(account).dueDate) }}
+                  </div>
+                </div>
+              </div>
+            </template>
+
+            <div v-else class="text-caption text-grey-5">
+              {{ $t('accounts.no_next_payment') }}
+            </div>
+
+            <!-- Barra de crédito utilizado: siempre visible si hay límite -->
+            <template v-if="account.credit_limit">
+              <div class="row items-center justify-between q-mt-md q-mb-xs">
+                <div class="text-caption text-grey-5">{{ $t('accounts.credit_used') }}</div>
+                <div class="text-caption text-grey-6">
+                  {{ Math.round(creditUsedPercent(account)) }}%
+                </div>
+              </div>
+              <q-linear-progress
+                :value="creditUsedPercent(account) / 100"
+                :color="creditUsedPercent(account) > 80 ? 'negative' : creditUsedPercent(account) > 50 ? 'warning' : 'positive'"
+                rounded
+                size="6px"
+              />
+            </template>
+
+            <!-- Botón de pago -->
+            <q-btn
+              unelevated
+              color="dark"
+              icon="credit_score"
+              :label="$t('accounts.pay_btn')"
+              class="full-width q-mt-md"
+              @click="openPaymentDialog(account)"
+            />
+          </template>
+
         </q-card-section>
       </q-card>
     </div>
 
     <!-- Modal: Nueva / Editar Cuenta -->
     <AccountForm v-model="showForm" :account="selectedAccount" />
+
+    <!-- Modal: Pago TDC -->
+    <CreditCardPaymentDialog
+      v-model="showPaymentDialog"
+      :account="paymentAccount"
+      :suggested-amount="paymentAccount ? nextInstallmentPayment(paymentAccount)?.amount ?? null : null"
+    />
 
     <!-- Confirmación eliminar -->
     <q-dialog v-model="showConfirm">
@@ -131,6 +202,7 @@ import { useAccountsStore } from 'stores/accounts.store'
 import { useTransactionsStore } from 'stores/transactions.store'
 import { useCurrency } from 'src/composables/useCurrency'
 import AccountForm from 'components/accounts/AccountForm.vue'
+import CreditCardPaymentDialog from 'components/accounts/CreditCardPaymentDialog.vue'
 
 const accountsStore = useAccountsStore()
 const transactionsStore = useTransactionsStore()
@@ -141,13 +213,19 @@ const showForm = ref(false)
 const selectedAccount = ref(null)
 const showConfirm = ref(false)
 const toDelete = ref(null)
+const showPaymentDialog = ref(false)
+const paymentAccount = ref(null)
+
+function openPaymentDialog(account) {
+  paymentAccount.value = account
+  showPaymentDialog.value = true
+}
 
 function editAccount(account) {
   selectedAccount.value = account
   showForm.value = true
 }
 
-// Al cerrar el form, limpiar la cuenta seleccionada
 watch(showForm, (val) => {
   if (!val) selectedAccount.value = null
 })
@@ -174,6 +252,98 @@ const totalBalance = computed(() =>
   accountsStore.accounts.reduce((sum, a) => sum + a.balance, 0)
 )
 
+// ── Lógica de próximo pago de cuotas ─────────────────────────────────────────
+
+function getNextDueDate(paymentDueDay) {
+  const today = new Date()
+  today.setHours(0, 0, 0, 0)
+  const thisMonth = new Date(today.getFullYear(), today.getMonth(), paymentDueDay)
+  return thisMonth >= today
+    ? thisMonth
+    : new Date(today.getFullYear(), today.getMonth() + 1, paymentDueDay)
+}
+
+function getLastCutDate(cutDay) {
+  if (!cutDay) return null
+  const today = new Date()
+  today.setHours(0, 0, 0, 0)
+  const thisMonthCut = new Date(today.getFullYear(), today.getMonth(), cutDay)
+  return thisMonthCut <= today
+    ? thisMonthCut
+    : new Date(today.getFullYear(), today.getMonth() - 1, cutDay)
+}
+
+/**
+ * Cuotas del próximo periodo menos pagos ya realizados desde el último corte.
+ */
+function nextInstallmentPayment(account) {
+  if (!account.payment_due_date) return null
+
+  const nextDue    = getNextDueDate(account.payment_due_date)
+  const nextDueStr = nextDue.toISOString().split('T')[0]
+
+  const dueTxs = transactionsStore.transactions.filter(t =>
+    t.account_id === account.id &&
+    t.installment_plan_id &&
+    t.date === nextDueStr
+  )
+  if (!dueTxs.length) return null
+
+  const totalDue = dueTxs.reduce((sum, t) => sum + t.amount, 0)
+
+  // Pagos de TDC realizados desde el último corte
+  const lastCut    = getLastCutDate(account.cut_date)
+  const lastCutStr = lastCut ? lastCut.toISOString().split('T')[0] : '1900-01-01'
+
+  const alreadyPaid = transactionsStore.transactions
+    .filter(t =>
+      t.destination_account_id === account.id &&
+      t.type                   === 'transferencia' &&
+      t.category               === 'Pago TDC' &&
+      t.date                   >= lastCutStr
+    )
+    .reduce((sum, t) => sum + t.amount, 0)
+
+  return {
+    amount:      Math.max(0, totalDue - alreadyPaid),
+    totalDue,
+    alreadyPaid,
+    dueDate:     nextDue,
+    count:       dueTxs.length,
+  }
+}
+
+/**
+ * Devuelve true si la fecha límite de pago está a 5 días o menos.
+ */
+function isPaymentUrgent(account) {
+  if (!account.payment_due_date) return false
+  const nextDue = getNextDueDate(account.payment_due_date)
+  const today = new Date()
+  today.setHours(0, 0, 0, 0)
+  const diffDays = (nextDue - today) / (1000 * 60 * 60 * 24)
+  return diffDays <= 5
+}
+
+/**
+ * Deuda real independientemente del modelo de balance:
+ * - balance negativo (modelo deuda):     deuda = |balance|
+ * - balance positivo (modelo disponible): deuda = credit_limit - balance
+ */
+function creditDebt(account) {
+  return account.balance >= 0
+    ? Math.max(0, account.credit_limit - account.balance)
+    : Math.abs(account.balance)
+}
+
+function creditUsedPercent(account) {
+  if (!account.credit_limit || account.credit_limit <= 0) return 0
+  return Math.min((creditDebt(account) / account.credit_limit) * 100, 100)
+}
+
+function formatDueDate(date) {
+  return date.toLocaleDateString('es-MX', { day: 'numeric', month: 'long' })
+}
 </script>
 
 <style scoped lang="scss">

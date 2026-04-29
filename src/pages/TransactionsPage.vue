@@ -58,21 +58,25 @@
             style="min-width: 160px"
           />
 
-          <!-- Fecha desde -->
+          <!-- Rango de fechas -->
           <q-input
-            v-model="filters.dateFrom"
-            :label="$t('transactions.filter_from')"
+            :model-value="dateRangeLabel"
+            :label="$t('transactions.filter_date')"
             outlined
             dense
-            clearable
             readonly
             hide-bottom-space
-            style="min-width: 140px"
+            style="min-width: 190px"
           >
             <template #prepend>
               <q-icon name="event" class="cursor-pointer">
                 <q-popup-proxy cover transition-show="scale" transition-hide="scale">
-                  <q-date v-model="filters.dateFrom" mask="YYYY-MM-DD" minimal>
+                  <q-date
+                    v-model="filters.dateRange"
+                    mask="YYYY-MM-DD"
+                    range
+                    minimal
+                  >
                     <div class="row items-center justify-end">
                       <q-btn v-close-popup label="OK" color="dark" flat />
                     </div>
@@ -80,29 +84,13 @@
                 </q-popup-proxy>
               </q-icon>
             </template>
-          </q-input>
-
-          <!-- Fecha hasta -->
-          <q-input
-            v-model="filters.dateTo"
-            :label="$t('transactions.filter_to')"
-            outlined
-            dense
-            clearable
-            readonly
-            hide-bottom-space
-            style="min-width: 140px"
-          >
-            <template #prepend>
-              <q-icon name="event" class="cursor-pointer">
-                <q-popup-proxy cover transition-show="scale" transition-hide="scale">
-                  <q-date v-model="filters.dateTo" mask="YYYY-MM-DD" minimal>
-                    <div class="row items-center justify-end">
-                      <q-btn v-close-popup label="OK" color="dark" flat />
-                    </div>
-                  </q-date>
-                </q-popup-proxy>
-              </q-icon>
+            <template v-if="filters.dateRange" #append>
+              <q-icon
+                name="close"
+                class="cursor-pointer"
+                size="xs"
+                @click.stop="filters.dateRange = null"
+              />
             </template>
           </q-input>
 
@@ -174,9 +162,9 @@
         <template #body-cell-type="props">
           <q-td :props="props">
             <q-chip
-              :color="props.row.type === 'ingreso' ? 'green-1' : 'red-1'"
-              :text-color="props.row.type === 'ingreso' ? 'green' : 'red-9'"
-              :label="props.row.type === 'ingreso' ? $t('transactions.type_income') : $t('transactions.type_expense')"
+              :color="typeChip(props.row.type).color"
+              :text-color="typeChip(props.row.type).textColor"
+              :label="typeChip(props.row.type).label"
               class="text-capitalize q-px-sm q-py-xs text-bold"
             />
           </q-td>
@@ -187,9 +175,9 @@
           <q-td :props="props">
             <span
               class="text-weight-bold"
-              :class="props.row.type === 'ingreso' ? 'text-positive' : 'text-negative'"
+              :class="props.row.type === 'ingreso' ? 'text-positive' : props.row.type === 'transferencia' ? 'text-grey-6' : 'text-negative'"
             >
-              {{ props.row.type === 'ingreso' ? '+' : '-' }}{{ formatCurrency(props.row.amount) }}
+              {{ props.row.type === 'ingreso' ? '+' : props.row.type === 'transferencia' ? '⇄ ' : '-' }}{{ formatCurrency(props.row.amount) }}
             </span>
           </q-td>
         </template>
@@ -198,8 +186,29 @@
         <template #body-cell-account_name="props">
           <q-td :props="props">
             <q-chip dense outline color="grey-7" class="q-ma-none">
-              {{ props.row.account_name }}
+              {{ props.row.destination_account_name
+                ? `${props.row.account_name} → ${props.row.destination_account_name}`
+                : props.row.account_name }}
             </q-chip>
+          </q-td>
+        </template>
+
+        <!-- Descripción -->
+        <template #body-cell-description="props">
+          <q-td :props="props">
+            <div class="row items-center q-gutter-xs no-wrap">
+              <q-chip
+                v-if="props.row.installment_month"
+                dense
+                size="xs"
+                color="blue-1"
+                text-color="blue-9"
+                class="q-ma-none"
+              >
+                Cuota {{ props.row.installment_month }}/{{ props.row.installment_total_months }}
+              </q-chip>
+              <span>{{ props.row.description }}</span>
+            </div>
           </q-td>
         </template>
 
@@ -226,9 +235,18 @@
     <q-dialog v-model="showConfirm">
       <q-card style="min-width: 320px">
         <q-card-section>
-          <div class="text-h6">{{ $t('transactions.delete_title') }}</div>
+          <div class="text-h6">
+            {{ toDelete?.installment_plan_id
+              ? $t('installments.delete_title')
+              : $t('transactions.delete_title') }}
+          </div>
           <div class="text-body2 q-mt-sm text-grey-7">
-            {{ $t('transactions.delete_confirm') }} <strong>{{ toDelete?.description }}</strong>?
+            <template v-if="toDelete?.installment_plan_id">
+              {{ $t('installments.delete_confirm', { months: toDelete.installment_total_months }) }}
+            </template>
+            <template v-else>
+              {{ $t('transactions.delete_confirm') }} <strong>{{ toDelete?.description }}</strong>?
+            </template>
           </div>
         </q-card-section>
         <q-card-actions align="right">
@@ -262,12 +280,21 @@ const toDelete = ref(null)
 
 // ── Filtros ───────────────────────────────────────────────────────────────────
 
+function currentMonthRange() {
+  const now = new Date()
+  const from = new Date(now.getFullYear(), now.getMonth(), 1)
+  const to   = new Date(now.getFullYear(), now.getMonth() + 1, 0)
+  return {
+    from: from.toISOString().split('T')[0],
+    to:   to.toISOString().split('T')[0],
+  }
+}
+
 const filters = ref({
-  type:     'all',
-  account:  null,
-  category: null,
-  dateFrom: null,
-  dateTo:   null,
+  type:      'all',
+  account:   null,
+  category:  null,
+  dateRange: currentMonthRange(),
 })
 
 const typeOptions = computed(() => [
@@ -284,27 +311,33 @@ const categoryOptions = computed(() =>
   settingsStore.categories.map(c => c.name)
 )
 
-const hasActiveFilters = computed(() =>
-  filters.value.type !== 'all' ||
-  filters.value.account ||
-  filters.value.category ||
-  filters.value.dateFrom ||
-  filters.value.dateTo
-)
+const hasActiveFilters = computed(() => {
+  const { from, to } = currentMonthRange()
+  const range = filters.value.dateRange
+  return (
+    filters.value.type !== 'all' ||
+    filters.value.account ||
+    filters.value.category ||
+    !range ||
+    range.from !== from ||
+    range.to !== to
+  )
+})
 
 function clearFilters() {
-  filters.value = { type: 'all', account: null, category: null, dateFrom: null, dateTo: null }
+  filters.value = { type: 'all', account: null, category: null, dateRange: currentMonthRange() }
 }
 
 // ── Transacciones filtradas ───────────────────────────────────────────────────
 
 const filteredTransactions = computed(() => {
+  const range = filters.value.dateRange
   return store.transactions.filter(t => {
     if (filters.value.type !== 'all' && t.type !== filters.value.type) return false
     if (filters.value.account && t.account_name !== filters.value.account) return false
     if (filters.value.category && t.category !== filters.value.category) return false
-    if (filters.value.dateFrom && t.date < filters.value.dateFrom) return false
-    if (filters.value.dateTo && t.date > filters.value.dateTo) return false
+    if (range?.from && t.date < range.from) return false
+    if (range?.to   && t.date > range.to)   return false
     return true
   })
 })
@@ -334,6 +367,21 @@ const columns = computed(() => [
   { name: 'description',  label: t('transactions.col_description'), field: 'description',  align: 'left' },
   { name: 'actions',      label: '',                                 field: 'actions',      align: 'right' },
 ])
+
+const dateRangeLabel = computed(() => {
+  const range = filters.value.dateRange
+  if (!range) return ''
+  const fmt = d => new Date(d + 'T00:00:00').toLocaleDateString('es-MX', { day: 'numeric', month: 'short' })
+  if (range.from && range.to) return `${fmt(range.from)} – ${fmt(range.to)}`
+  if (range.from) return fmt(range.from)
+  return ''
+})
+
+function typeChip(type) {
+  if (type === 'ingreso')       return { color: 'green-1', textColor: 'green',  label: t('transactions.type_income') }
+  if (type === 'transferencia') return { color: 'blue-1',  textColor: 'blue-9', label: t('transactions.type_transfer') }
+  return                               { color: 'red-1',   textColor: 'red-9',  label: t('transactions.type_expense') }
+}
 
 function formatDate(dateStr) {
   return new Date(dateStr + 'T00:00:00').toLocaleDateString('es-MX', {
