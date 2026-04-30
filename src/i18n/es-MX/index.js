@@ -49,6 +49,7 @@ export default {
     filter_to: 'Hasta',
     filter_date: 'Periodo',
     search_placeholder: 'Buscar...',
+    filters_btn: 'Filtros',
     clear_filters: 'Limpiar',
     delete_title: 'Eliminar transacción',
     delete_confirm: '¿Estás seguro que deseas eliminar',

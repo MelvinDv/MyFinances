@@ -19,9 +19,9 @@
     <!-- Filtros -->
     <q-card flat bordered class="q-mb-lg">
       <q-card-section class="q-py-sm">
-        <div class="row items-center q-gutter-sm">
 
-          <!-- Tipo -->
+        <!-- Desktop -->
+        <div v-if="$q.screen.gt.xs" class="row items-center q-gutter-sm">
           <q-btn-toggle
             v-model="filters.type"
             :options="typeOptions"
@@ -33,50 +33,30 @@
             dense
             class="filter-toggle"
           />
-
-          <!-- Cuenta -->
           <q-select
             v-model="filters.account"
             :options="accountOptions"
             :label="$t('transactions.filter_account')"
-            outlined
-            dense
-            clearable
-            hide-bottom-space
+            outlined dense clearable hide-bottom-space
             style="min-width: 160px"
           />
-
-          <!-- Categoría -->
           <q-select
             v-model="filters.category"
             :options="categoryOptions"
             :label="$t('transactions.filter_category')"
-            outlined
-            dense
-            clearable
-            hide-bottom-space
+            outlined dense clearable hide-bottom-space
             style="min-width: 160px"
           />
-
-          <!-- Rango de fechas -->
           <q-input
             :model-value="dateRangeLabel"
             :label="$t('transactions.filter_date')"
-            outlined
-            dense
-            readonly
-            hide-bottom-space
+            outlined dense readonly hide-bottom-space
             style="min-width: 190px"
           >
             <template #prepend>
               <q-icon name="event" class="cursor-pointer">
                 <q-popup-proxy cover transition-show="scale" transition-hide="scale">
-                  <q-date
-                    v-model="filters.dateRange"
-                    mask="YYYY-MM-DD"
-                    range
-                    minimal
-                  >
+                  <q-date v-model="filters.dateRange" mask="YYYY-MM-DD" range minimal>
                     <div class="row items-center justify-end">
                       <q-btn v-close-popup label="OK" color="dark" flat />
                     </div>
@@ -85,69 +65,148 @@
               </q-icon>
             </template>
             <template v-if="filters.dateRange" #append>
-              <q-icon
-                name="close"
-                class="cursor-pointer"
-                size="xs"
-                @click.stop="filters.dateRange = null"
-              />
+              <q-icon name="close" class="cursor-pointer" size="xs" @click.stop="filters.dateRange = null" />
             </template>
           </q-input>
-
-          <!-- Buscador -->
           <q-input
             v-model="filters.search"
             :placeholder="$t('transactions.search_placeholder')"
-            outlined
-            dense
-            clearable
-            hide-bottom-space
+            outlined dense clearable hide-bottom-space
             style="min-width: 190px"
           >
             <template #prepend>
               <q-icon name="search" color="grey-5" />
             </template>
           </q-input>
-
-          <!-- Limpiar filtros -->
           <q-btn
             v-if="hasActiveFilters"
-            flat
-            dense
-            icon="close"
+            flat dense icon="close"
             :label="$t('transactions.clear_filters')"
-            color="grey-6"
-            no-caps
+            color="grey-6" no-caps
             @click="clearFilters"
           />
+        </div>
+
+        <!-- Mobile -->
+        <div v-else class="row items-center q-gutter-sm">
+
+          <!-- Buscador -->
+          <q-input
+            v-model="filters.search"
+            :placeholder="$t('transactions.search_placeholder')"
+            outlined dense clearable hide-bottom-space
+            class="col"
+          >
+            <template #prepend>
+              <q-icon name="search" color="grey-5" />
+            </template>
+          </q-input>
+
+          <!-- Botón Filtros -->
+          <q-btn
+            unelevated
+            :color="hasActiveFilters ? 'dark' : 'grey-2'"
+            :text-color="hasActiveFilters ? 'white' : 'grey-8'"
+            icon="tune"
+            :label="$t('transactions.filters_btn')"
+            no-caps
+            dense
+            class="q-px-sm"
+          >
+            <q-badge v-if="activeFiltersCount > 0" color="negative" floating rounded>
+              {{ activeFiltersCount }}
+            </q-badge>
+            <q-menu style="width: 280px" max-height="80vh">
+              <div class="q-pa-md column q-gutter-md">
+
+                <q-btn-toggle
+                  v-model="filters.type"
+                  :options="typeOptions"
+                  unelevated
+                  toggle-color="dark"
+                  color="white"
+                  text-color="grey-7"
+                  no-caps
+                  dense
+                  spread
+                  class="filter-toggle"
+                />
+
+                <q-select
+                  v-model="filters.account"
+                  :options="accountOptions"
+                  :label="$t('transactions.filter_account')"
+                  outlined dense clearable hide-bottom-space
+                />
+
+                <q-select
+                  v-model="filters.category"
+                  :options="categoryOptions"
+                  :label="$t('transactions.filter_category')"
+                  outlined dense clearable hide-bottom-space
+                />
+
+                <q-input
+                  :model-value="dateRangeLabel"
+                  :label="$t('transactions.filter_date')"
+                  outlined dense readonly hide-bottom-space
+                >
+                  <template #prepend>
+                    <q-icon name="event" class="cursor-pointer">
+                      <q-popup-proxy cover transition-show="scale" transition-hide="scale">
+                        <q-date v-model="filters.dateRange" mask="YYYY-MM-DD" range minimal>
+                          <div class="row items-center justify-end">
+                            <q-btn v-close-popup label="OK" color="dark" flat />
+                          </div>
+                        </q-date>
+                      </q-popup-proxy>
+                    </q-icon>
+                  </template>
+                  <template v-if="filters.dateRange" #append>
+                    <q-icon name="close" class="cursor-pointer" size="xs" @click.stop="filters.dateRange = null" />
+                  </template>
+                </q-input>
+
+                <q-btn
+                  v-if="hasActiveFilters"
+                  flat dense icon="close"
+                  :label="$t('transactions.clear_filters')"
+                  color="grey-6" no-caps
+                  @click="clearFilters"
+                />
+
+              </div>
+            </q-menu>
+          </q-btn>
 
         </div>
+
       </q-card-section>
     </q-card>
 
     <!-- Resumen rápido (totales filtrados) -->
-    <div class="row q-gutter-md q-mb-lg">
+    <div class="row q-gutter-xs q-mb-lg">
       <q-card flat bordered class="col">
-        <q-card-section class="q-py-sm">
+        <q-card-section class="q-py-sm q-px-sm">
           <div class="text-caption text-grey-6">{{ $t('transactions.income') }}</div>
-          <div class="text-h6 text-positive text-weight-bold">
+          <div class="summary-amount text-positive text-weight-bold">
             +{{ formatCurrency(filteredTotalIngresos) }}
           </div>
         </q-card-section>
       </q-card>
       <q-card flat bordered class="col">
-        <q-card-section class="q-py-sm">
+        <q-card-section class="q-py-sm q-px-sm">
           <div class="text-caption text-grey-6">{{ $t('transactions.expenses') }}</div>
-          <div class="text-h6 text-negative text-weight-bold">
+          <div class="summary-amount text-negative text-weight-bold">
             -{{ formatCurrency(filteredTotalGastos) }}
           </div>
         </q-card-section>
       </q-card>
       <q-card flat bordered class="col">
-        <q-card-section class="q-py-sm">
+        <q-card-section class="q-py-sm q-px-sm">
           <div class="text-caption text-grey-6">{{ $t('transactions.balance') }}</div>
           <div
-            class="text-h6 text-weight-bold"
+            class="summary-amount text-weight-bold"
             :class="filteredBalance >= 0 ? 'text-positive' : 'text-negative'"
           >
             {{ formatCurrency(filteredBalance) }}
@@ -297,6 +356,7 @@
 <script setup>
 import { ref, computed } from 'vue'
 import { useI18n } from 'vue-i18n'
+import { useQuasar } from 'quasar'
 import { useTransactionsStore } from 'stores/transactions.store'
 import { useAccountsStore } from 'stores/accounts.store'
 import { useSettingsStore } from 'stores/settings.store'
@@ -305,6 +365,7 @@ import TransactionForm from 'components/transactions/TransactionForm.vue'
 
 const { t } = useI18n()
 const { formatCurrency } = useCurrency()
+const $q = useQuasar()
 const store = useTransactionsStore()
 const accountsStore = useAccountsStore()
 const settingsStore = useSettingsStore()
@@ -357,6 +418,17 @@ const accountOptions = computed(() =>
 const categoryOptions = computed(() =>
   settingsStore.categories.map(c => c.name)
 )
+
+const activeFiltersCount = computed(() => {
+  const { from, to } = currentMonthRange()
+  const range = filters.value.dateRange
+  let count = 0
+  if (filters.value.type !== 'all') count++
+  if (filters.value.account) count++
+  if (filters.value.category) count++
+  if (!range || range.from !== from || range.to !== to) count++
+  return count
+})
 
 const hasActiveFilters = computed(() => {
   const { from, to } = currentMonthRange()
@@ -462,5 +534,13 @@ function handleDelete() {
   border: 1px solid #e0e0e0;
   border-radius: 8px;
   overflow: hidden;
+}
+
+.summary-amount {
+  font-size: clamp(13px, 2.5vw, 20px);
+  line-height: 1.3;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 </style>

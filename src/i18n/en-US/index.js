@@ -49,6 +49,7 @@ export default {
     filter_to: 'To',
     filter_date: 'Period',
     search_placeholder: 'Search...',
+    filters_btn: 'Filters',
     clear_filters: 'Clear',
     delete_title: 'Delete transaction',
     delete_confirm: 'Are you sure you want to delete',
