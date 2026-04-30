@@ -4,6 +4,10 @@ const routes = [
     component: () => import('pages/LoginPage.vue'),
   },
   {
+    path: '/confirmacion',
+    component: () => import('pages/ConfirmPage.vue'),
+  },
+  {
     path: '/',
     component: () => import('layouts/MainLayout.vue'),
     meta: { requiresAuth: true },
