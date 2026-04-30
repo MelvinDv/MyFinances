@@ -18,6 +18,22 @@ export default {
     date: 'Fecha',
   },
 
+  notify: {
+    transaction_added:     'Transacción registrada',
+    transaction_updated:   'Transacción actualizada',
+    transaction_deleted:   'Transacción eliminada',
+    transfer_added:        'Transferencia registrada',
+    recurring_added:       'Gasto recurrente registrado',
+    recurring_deleted:     'Gasto recurrente eliminado',
+    installment_added:     'Plan de cuotas registrado',
+    account_added:         'Cuenta agregada',
+    account_updated:       'Cuenta actualizada',
+    account_deleted:       'Cuenta eliminada',
+    category_added:        'Categoría creada',
+    category_updated:      'Categoría actualizada',
+    category_deleted:      'Categoría eliminada',
+  },
+
   account_types: {
     tarjeta_debito: 'Tarjeta de Débito',
     tarjeta_credito: 'Tarjeta de Crédito',

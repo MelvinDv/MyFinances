@@ -198,12 +198,16 @@
 
 <script setup>
 import { ref, computed, watch } from 'vue'
+import { useI18n } from 'vue-i18n'
+import { useQuasar } from 'quasar'
 import { useAccountsStore } from 'stores/accounts.store'
 import { useTransactionsStore } from 'stores/transactions.store'
 import { useCurrency } from 'src/composables/useCurrency'
 import AccountForm from 'components/accounts/AccountForm.vue'
 import CreditCardPaymentDialog from 'components/accounts/CreditCardPaymentDialog.vue'
 
+const { t } = useI18n()
+const $q = useQuasar()
 const accountsStore = useAccountsStore()
 const transactionsStore = useTransactionsStore()
 const { formatCurrency } = useCurrency()
@@ -238,6 +242,7 @@ function confirmDelete(account) {
 async function handleDelete() {
   await accountsStore.deleteAccount(toDelete.value.id)
   showConfirm.value = false
+  $q.notify({ message: t('notify.account_deleted'), color: 'negative', icon: 'delete', position: 'bottom', timeout: 2500 })
   toDelete.value = null
 }
 

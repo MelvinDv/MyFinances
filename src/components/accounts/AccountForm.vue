@@ -137,6 +137,7 @@
 <script setup>
 import { ref, computed, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
+import { useQuasar } from 'quasar'
 import { useAccountsStore } from 'stores/accounts.store'
 
 const props = defineProps({
@@ -146,6 +147,7 @@ const props = defineProps({
 const emit = defineEmits(['update:modelValue'])
 
 const { t } = useI18n()
+const $q = useQuasar()
 const accountsStore = useAccountsStore()
 
 const accountTypes = computed(() => [
@@ -204,6 +206,7 @@ function handleSubmit() {
       payment_due_date: form.value.payment_due_date,
       credit_limit:     form.value.credit_limit,
     })
+    $q.notify({ message: t('notify.account_updated'), color: 'positive', icon: 'check_circle', position: 'bottom', timeout: 2500 })
   } else {
     accountsStore.addAccount({
       label:            form.value.label,
@@ -215,6 +218,7 @@ function handleSubmit() {
       payment_due_date: form.value.payment_due_date,
       credit_limit:     form.value.credit_limit,
     })
+    $q.notify({ message: t('notify.account_added'), color: 'positive', icon: 'check_circle', position: 'bottom', timeout: 2500 })
   }
 
   form.value = defaultForm()

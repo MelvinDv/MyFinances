@@ -326,6 +326,7 @@
 <script setup>
 import { ref, computed, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
+import { useQuasar } from 'quasar'
 import { useTransactionsStore } from 'stores/transactions.store'
 import { useRecurringStore } from 'stores/recurring_transactions.store'
 import { useAccountsStore } from 'stores/accounts.store'
@@ -342,6 +343,7 @@ const isEditMode = computed(() => !!props.transaction)
 
 const { t } = useI18n()
 const { formatCurrency } = useCurrency()
+const $q = useQuasar()
 const transactionsStore = useTransactionsStore()
 const recurringStore    = useRecurringStore()
 const accountsStore     = useAccountsStore()
@@ -490,6 +492,7 @@ async function handleSubmit() {
       date:        form.value.date,
       description: form.value.description,
     })
+    $q.notify({ message: t('notify.transfer_added'), color: 'positive', icon: 'check_circle', position: 'bottom', timeout: 2500 })
   } else {
     if (!form.value.category || !form.value.account) return
 
@@ -515,6 +518,7 @@ async function handleSubmit() {
           date:         form.value.date,
         },
       )
+      $q.notify({ message: t('notify.recurring_added'), color: 'positive', icon: 'check_circle', position: 'bottom', timeout: 2500 })
       form.value = defaultForm()
       emit('update:modelValue', false)
       return
@@ -545,6 +549,7 @@ async function handleSubmit() {
         },
         paymentDueDay: form.value.account.payment_due_date,
       })
+      $q.notify({ message: t('notify.installment_added'), color: 'positive', icon: 'check_circle', position: 'bottom', timeout: 2500 })
     } else {
       transactionsStore.addTransaction({
         type:         form.value.type,
@@ -555,6 +560,7 @@ async function handleSubmit() {
         account_name: form.value.account.name,
         date:         form.value.date,
       })
+      $q.notify({ message: t('notify.transaction_added'), color: 'positive', icon: 'check_circle', position: 'bottom', timeout: 2500 })
     }
   }
 
@@ -590,6 +596,7 @@ async function handleUpdate() {
   }
 
   await transactionsStore.updateTransaction(tx.id, updates, tx)
+  $q.notify({ message: t('notify.transaction_updated'), color: 'positive', icon: 'check_circle', position: 'bottom', timeout: 2500 })
   emit('update:modelValue', false)
 }
 </script>

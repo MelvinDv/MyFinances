@@ -525,6 +525,7 @@ function confirmDelete(transaction) {
 function handleDelete() {
   store.deleteTransaction(toDelete.value.id)
   showConfirm.value = false
+  $q.notify({ message: t('notify.transaction_deleted'), color: 'negative', icon: 'delete', position: 'bottom', timeout: 2500 })
   toDelete.value = null
 }
 </script>

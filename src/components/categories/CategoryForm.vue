@@ -141,6 +141,8 @@
 
 <script setup>
 import { ref, watch } from 'vue'
+import { useI18n } from 'vue-i18n'
+import { useQuasar } from 'quasar'
 import { useSettingsStore } from 'src/stores/settings.store'
 
 const props = defineProps({
@@ -149,6 +151,8 @@ const props = defineProps({
 })
 const emit = defineEmits(['update:modelValue'])
 
+const { t } = useI18n()
+const $q = useQuasar()
 const settingsStore = useSettingsStore()
 
 const colorOptions = [
@@ -210,8 +214,10 @@ function handleSubmit() {
 
   if (props.category) {
     settingsStore.updateCategory(props.category.id, payload)
+    $q.notify({ message: t('notify.category_updated'), color: 'positive', icon: 'check_circle', position: 'bottom', timeout: 2500 })
   } else {
     settingsStore.addCategory(payload)
+    $q.notify({ message: t('notify.category_added'), color: 'positive', icon: 'check_circle', position: 'bottom', timeout: 2500 })
   }
 
   emit('update:modelValue', false)

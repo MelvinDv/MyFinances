@@ -198,6 +198,8 @@
 
 <script setup>
 import { ref, watch } from 'vue'
+import { useI18n } from 'vue-i18n'
+import { useQuasar } from 'quasar'
 import { useSettingsStore } from 'src/stores/settings.store'
 import { useAccountsStore } from 'src/stores/accounts.store'
 import { useRecurringStore } from 'src/stores/recurring_transactions.store'
@@ -205,6 +207,8 @@ import { useCurrency } from 'src/composables/useCurrency'
 import CategoryForm from 'src/components/categories/CategoryForm.vue'
 import RecurringForm from 'src/components/recurring/RecurringForm.vue'
 
+const { t } = useI18n()
+const $q = useQuasar()
 const settingsStore  = useSettingsStore()
 const accountsStore  = useAccountsStore()
 const recurringStore = useRecurringStore()
@@ -233,6 +237,7 @@ function confirmDelete(cat) {
 function handleDelete() {
   settingsStore.deleteCategory(toDelete.value.id)
   showConfirm.value = false
+  $q.notify({ message: t('notify.category_deleted'), color: 'negative', icon: 'delete', position: 'bottom', timeout: 2500 })
   toDelete.value = null
 }
 
@@ -259,6 +264,7 @@ function confirmDeleteRecurring(r) {
 async function handleDeleteRecurring() {
   await recurringStore.deleteRecurring(toDeleteRecurring.value.id)
   showConfirmRecurring.value = false
+  $q.notify({ message: t('notify.recurring_deleted'), color: 'negative', icon: 'delete', position: 'bottom', timeout: 2500 })
   toDeleteRecurring.value = null
 }
 </script>
