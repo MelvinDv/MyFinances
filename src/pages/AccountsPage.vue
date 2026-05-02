@@ -151,6 +151,20 @@
               />
             </template>
 
+            <!-- Aviso de vencimiento -->
+            <div
+              v-if="paymentDaysLeft(account) !== null"
+              class="row items-center q-gutter-x-xs q-mt-sm"
+              :class="paymentDaysLeft(account) === 0 ? 'text-negative' : 'text-warning'"
+            >
+              <q-icon :name="paymentDaysLeft(account) === 0 ? 'error' : 'schedule'" size="xs" />
+              <span class="text-caption text-weight-medium">
+                {{ paymentDaysLeft(account) === 0
+                  ? $t('accounts.payment_due_today')
+                  : $t('accounts.payment_due_in', { n: paymentDaysLeft(account) }) }}
+              </span>
+            </div>
+
             <!-- Botón de pago -->
             <q-btn
               unelevated
@@ -328,6 +342,19 @@ function isPaymentUrgent(account) {
   today.setHours(0, 0, 0, 0)
   const diffDays = (nextDue - today) / (1000 * 60 * 60 * 24)
   return diffDays <= 5
+}
+
+/**
+ * Devuelve días restantes hasta el próximo pago (0 = hoy, 1–5 = próximo),
+ * o null si faltan más de 5 días o no tiene fecha de pago.
+ */
+function paymentDaysLeft(account) {
+  if (!account.payment_due_date) return null
+  const nextDue = getNextDueDate(account.payment_due_date)
+  const today = new Date()
+  today.setHours(0, 0, 0, 0)
+  const diffDays = (nextDue - today) / (1000 * 60 * 60 * 24)
+  return diffDays <= 5 ? diffDays : null
 }
 
 /**

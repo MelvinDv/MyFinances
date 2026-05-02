@@ -112,6 +112,8 @@ export default {
     no_next_payment: 'Sin cuotas este periodo',
     credit_used: 'Crédito utilizado',
     pay_btn: 'Realizar pago',
+    payment_due_today: '¡Realiza el pago hoy!',
+    payment_due_in: 'Por vencer: en {n} días',
   },
 
   credit_payment: {
