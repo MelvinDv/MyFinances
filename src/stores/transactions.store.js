@@ -5,6 +5,7 @@ import { useAccountsStore } from './accounts.store'
 
 export const useTransactionsStore = defineStore('transactions', () => {
   const transactions = ref([])
+  const loading = ref(false)
 
   const totalIngresos = computed(() =>
     transactions.value
@@ -21,141 +22,166 @@ export const useTransactionsStore = defineStore('transactions', () => {
   const balance = computed(() => totalIngresos.value - totalGastos.value)
 
   async function fetchTransactions() {
-    const { data, error } = await supabase
-      .from('transactions')
-      .select('*')
-      .order('date', { ascending: false })
-    if (!error) transactions.value = data
+    loading.value = true
+    try {
+      const { data, error } = await supabase
+        .from('transactions')
+        .select('*')
+        .order('date', { ascending: false })
+      if (!error) transactions.value = data
+    } finally {
+      loading.value = false
+    }
   }
 
   async function addTransaction(transaction) {
-    const { data: { user } } = await supabase.auth.getUser()
-    const { data, error } = await supabase
-      .from('transactions')
-      .insert({ ...transaction, user_id: user.id })
-      .select()
-      .single()
-    if (error) return
+    loading.value = true
+    try {
+      const { data: { user } } = await supabase.auth.getUser()
+      const { data, error } = await supabase
+        .from('transactions')
+        .insert({ ...transaction, user_id: user.id })
+        .select()
+        .single()
+      if (error) return
 
-    transactions.value.unshift(data)
-    const accountsStore = useAccountsStore()
-    await accountsStore.updateBalance(transaction.account_id, transaction.amount, transaction.type)
+      transactions.value.unshift(data)
+      const accountsStore = useAccountsStore()
+      await accountsStore.updateBalance(transaction.account_id, transaction.amount, transaction.type)
+    } finally {
+      loading.value = false
+    }
   }
 
   async function addInstallmentPlan({ plan, paymentDueDay }) {
-    const { data: { user } } = await supabase.auth.getUser()
+    loading.value = true
+    try {
+      const { data: { user } } = await supabase.auth.getUser()
 
-    // 1. Crear el plan
-    const { data: newPlan, error: planError } = await supabase
-      .from('installment_plans')
-      .insert({ ...plan, user_id: user.id })
-      .select()
-      .single()
-    if (planError) return
+      // 1. Crear el plan
+      const { data: newPlan, error: planError } = await supabase
+        .from('installment_plans')
+        .insert({ ...plan, user_id: user.id })
+        .select()
+        .single()
+      if (planError) return
 
-    // 2. Generar una transacción por cada cuota
-    const txInserts = []
-    for (let i = 1; i <= plan.months; i++) {
-      const d = new Date(plan.start_date + 'T00:00:00')
-      d.setMonth(d.getMonth() + i)
-      if (paymentDueDay) {
-        const lastDay = new Date(d.getFullYear(), d.getMonth() + 1, 0).getDate()
-        d.setDate(Math.min(paymentDueDay, lastDay))
+      // 2. Generar una transacción por cada cuota
+      const txInserts = []
+      for (let i = 1; i <= plan.months; i++) {
+        const d = new Date(plan.start_date + 'T00:00:00')
+        d.setMonth(d.getMonth() + i)
+        if (paymentDueDay) {
+          const lastDay = new Date(d.getFullYear(), d.getMonth() + 1, 0).getDate()
+          d.setDate(Math.min(paymentDueDay, lastDay))
+        }
+        txInserts.push({
+          user_id:                  user.id,
+          type:                     'gasto',
+          amount:                   plan.monthly_payment,
+          description:              plan.description,
+          category:                 plan.category,
+          account_id:               plan.account_id,
+          account_name:             plan.account_name,
+          date:                     d.toISOString().split('T')[0],
+          installment_plan_id:      newPlan.id,
+          installment_month:        i,
+          installment_total_months: plan.months,
+        })
       }
-      txInserts.push({
-        user_id:                  user.id,
-        type:                     'gasto',
-        amount:                   plan.monthly_payment,
-        description:              plan.description,
-        category:                 plan.category,
-        account_id:               plan.account_id,
-        account_name:             plan.account_name,
-        date:                     d.toISOString().split('T')[0],
-        installment_plan_id:      newPlan.id,
-        installment_month:        i,
-        installment_total_months: plan.months,
-      })
+
+      const { data: newTxs, error: txError } = await supabase
+        .from('transactions')
+        .insert(txInserts)
+        .select()
+      if (txError) return
+
+      // 3. Agregar al estado local ordenado por fecha desc
+      transactions.value = [...newTxs, ...transactions.value]
+        .sort((a, b) => b.date.localeCompare(a.date))
+
+      // 4. Actualizar balance de la cuenta con la deuda total (una sola vez)
+      const accountsStore = useAccountsStore()
+      await accountsStore.updateBalance(plan.account_id, plan.total_amount, 'gasto')
+    } finally {
+      loading.value = false
     }
-
-    const { data: newTxs, error: txError } = await supabase
-      .from('transactions')
-      .insert(txInserts)
-      .select()
-    if (txError) return
-
-    // 3. Agregar al estado local ordenado por fecha desc
-    transactions.value = [...newTxs, ...transactions.value]
-      .sort((a, b) => b.date.localeCompare(a.date))
-
-    // 4. Actualizar balance de la cuenta con la deuda total (una sola vez)
-    const accountsStore = useAccountsStore()
-    await accountsStore.updateBalance(plan.account_id, plan.total_amount, 'gasto')
   }
 
   async function updateTransaction(id, updates, original) {
-    const { data, error } = await supabase
-      .from('transactions')
-      .update(updates)
-      .eq('id', id)
-      .select()
-      .single()
-    if (error) return
+    loading.value = true
+    try {
+      const { data, error } = await supabase
+        .from('transactions')
+        .update(updates)
+        .eq('id', id)
+        .select()
+        .single()
+      if (error) return
 
-    const index = transactions.value.findIndex(t => t.id === id)
-    if (index !== -1) transactions.value.splice(index, 1, data)
+      const index = transactions.value.findIndex(t => t.id === id)
+      if (index !== -1) transactions.value.splice(index, 1, data)
 
-    // Re-ordenar por fecha si cambió
-    transactions.value = [...transactions.value]
-      .sort((a, b) => b.date.localeCompare(a.date))
+      // Re-ordenar por fecha si cambió
+      transactions.value = [...transactions.value]
+        .sort((a, b) => b.date.localeCompare(a.date))
 
-    const accountsStore = useAccountsStore()
+      const accountsStore = useAccountsStore()
 
-    if (original.type === 'transferencia') {
-      // Revertir transferencia vieja
-      await accountsStore.updateBalance(original.account_id,             original.amount, 'ingreso')
-      await accountsStore.updateBalance(original.destination_account_id, original.amount, 'gasto')
-      // Aplicar transferencia nueva
-      await accountsStore.updateBalance(data.account_id,             data.amount, 'gasto')
-      await accountsStore.updateBalance(data.destination_account_id, data.amount, 'ingreso')
-    } else {
-      // Revertir balance viejo
-      await accountsStore.updateBalance(
-        original.account_id,
-        original.amount,
-        original.type === 'ingreso' ? 'gasto' : 'ingreso',
-      )
-      // Aplicar balance nuevo
-      await accountsStore.updateBalance(data.account_id, data.amount, data.type)
+      if (original.type === 'transferencia') {
+        // Revertir transferencia vieja
+        await accountsStore.updateBalance(original.account_id,             original.amount, 'ingreso')
+        await accountsStore.updateBalance(original.destination_account_id, original.amount, 'gasto')
+        // Aplicar transferencia nueva
+        await accountsStore.updateBalance(data.account_id,             data.amount, 'gasto')
+        await accountsStore.updateBalance(data.destination_account_id, data.amount, 'ingreso')
+      } else {
+        // Revertir balance viejo
+        await accountsStore.updateBalance(
+          original.account_id,
+          original.amount,
+          original.type === 'ingreso' ? 'gasto' : 'ingreso',
+        )
+        // Aplicar balance nuevo
+        await accountsStore.updateBalance(data.account_id, data.amount, data.type)
+      }
+    } finally {
+      loading.value = false
     }
   }
 
   async function deleteTransaction(id) {
-    const index = transactions.value.findIndex(t => t.id === id)
-    if (index === -1) return
+    loading.value = true
+    try {
+      const index = transactions.value.findIndex(t => t.id === id)
+      if (index === -1) return
 
-    const transaction = transactions.value[index]
+      const transaction = transactions.value[index]
 
-    if (transaction.installment_plan_id) {
-      await deleteInstallmentPlan(transaction.installment_plan_id)
-      return
-    }
+      if (transaction.installment_plan_id) {
+        await deleteInstallmentPlan(transaction.installment_plan_id)
+        return
+      }
 
-    const { error } = await supabase.from('transactions').delete().eq('id', id)
-    if (error) return
+      const { error } = await supabase.from('transactions').delete().eq('id', id)
+      if (error) return
 
-    transactions.value.splice(index, 1)
-    const accountsStore = useAccountsStore()
+      transactions.value.splice(index, 1)
+      const accountsStore = useAccountsStore()
 
-    if (transaction.type === 'transferencia' && transaction.destination_account_id) {
-      // Revertir ambos lados: devolver dinero al origen y descontar del destino
-      await accountsStore.updateBalance(transaction.account_id,             transaction.amount, 'ingreso')
-      await accountsStore.updateBalance(transaction.destination_account_id, transaction.amount, 'gasto')
-    } else {
-      await accountsStore.updateBalance(
-        transaction.account_id,
-        transaction.amount,
-        transaction.type === 'ingreso' ? 'gasto' : 'ingreso',
-      )
+      if (transaction.type === 'transferencia' && transaction.destination_account_id) {
+        // Revertir ambos lados: devolver dinero al origen y descontar del destino
+        await accountsStore.updateBalance(transaction.account_id,             transaction.amount, 'ingreso')
+        await accountsStore.updateBalance(transaction.destination_account_id, transaction.amount, 'gasto')
+      } else {
+        await accountsStore.updateBalance(
+          transaction.account_id,
+          transaction.amount,
+          transaction.type === 'ingreso' ? 'gasto' : 'ingreso',
+        )
+      }
+    } finally {
+      loading.value = false
     }
   }
 
@@ -181,35 +207,40 @@ export const useTransactionsStore = defineStore('transactions', () => {
   }
 
   async function addTransfer({ fromAccount, toAccount, amount, date, description, category = 'Transferencia' }) {
-    const { data: { user } } = await supabase.auth.getUser()
+    loading.value = true
+    try {
+      const { data: { user } } = await supabase.auth.getUser()
 
-    const fromName = fromAccount.name ?? fromAccount.label
-    const toName   = toAccount.name   ?? toAccount.label
+      const fromName = fromAccount.name ?? fromAccount.label
+      const toName   = toAccount.name   ?? toAccount.label
 
-    const { data, error } = await supabase
-      .from('transactions')
-      .insert({
-        user_id:                  user.id,
-        type:                     'transferencia',
-        amount,
-        category,
-        account_id:               fromAccount.id,
-        account_name:             fromName,
-        destination_account_id:   toAccount.id,
-        destination_account_name: toName,
-        date,
-        description:              description || '',
-      })
-      .select()
-      .single()
-    if (error) return
+      const { data, error } = await supabase
+        .from('transactions')
+        .insert({
+          user_id:                  user.id,
+          type:                     'transferencia',
+          amount,
+          category,
+          account_id:               fromAccount.id,
+          account_name:             fromName,
+          destination_account_id:   toAccount.id,
+          destination_account_name: toName,
+          date,
+          description:              description || '',
+        })
+        .select()
+        .single()
+      if (error) return
 
-    transactions.value = [data, ...transactions.value]
-      .sort((a, b) => b.date.localeCompare(a.date))
+      transactions.value = [data, ...transactions.value]
+        .sort((a, b) => b.date.localeCompare(a.date))
 
-    const accountsStore = useAccountsStore()
-    await accountsStore.updateBalance(fromAccount.id, amount, 'gasto')
-    await accountsStore.updateBalance(toAccount.id,   amount, 'ingreso')
+      const accountsStore = useAccountsStore()
+      await accountsStore.updateBalance(fromAccount.id, amount, 'gasto')
+      await accountsStore.updateBalance(toAccount.id,   amount, 'ingreso')
+    } finally {
+      loading.value = false
+    }
   }
 
   async function payCreditCard({ creditAccount, fromAccount, amount, date }) {
@@ -225,6 +256,7 @@ export const useTransactionsStore = defineStore('transactions', () => {
 
   return {
     transactions,
+    loading,
     totalIngresos,
     totalGastos,
     balance,

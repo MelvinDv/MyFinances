@@ -104,6 +104,7 @@
 <script setup>
 import { ref, computed, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
+import { useQuasar } from 'quasar'
 import { useTransactionsStore } from 'stores/transactions.store'
 import { useAccountsStore } from 'stores/accounts.store'
 import { useCurrency } from 'src/composables/useCurrency'
@@ -116,6 +117,7 @@ const props = defineProps({
 const emit = defineEmits(['update:modelValue'])
 
 const { t } = useI18n()
+const $q = useQuasar()
 const { formatCurrency } = useCurrency()
 const transactionsStore = useTransactionsStore()
 const accountsStore = useAccountsStore()
@@ -164,6 +166,7 @@ async function handleSubmit() {
     date:          form.value.date,
   })
 
+  $q.notify({ type: 'positive', message: t('notify.credit_payment_added') })
   emit('update:modelValue', false)
 }
 </script>

@@ -222,6 +222,7 @@
         :columns="columns"
         row-key="id"
         flat
+        :loading="store.loading"
         :pagination="{ rowsPerPage: 50, sortBy: 'date', descending: true }"
         :rows-per-page-options="rowsPerPageOptions"
         :rows-per-page-label="$t('transactions.rows_per_page')"

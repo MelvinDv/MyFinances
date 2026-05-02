@@ -23,6 +23,7 @@ export default {
     transaction_updated:   'Transacción actualizada',
     transaction_deleted:   'Transacción eliminada',
     transfer_added:        'Transferencia registrada',
+    credit_payment_added:  'Pago de tarjeta registrado',
     recurring_added:       'Gasto recurrente registrado',
     recurring_deleted:     'Gasto recurrente eliminado',
     installment_added:     'Plan de cuotas registrado',

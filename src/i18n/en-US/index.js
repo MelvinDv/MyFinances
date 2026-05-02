@@ -23,6 +23,7 @@ export default {
     transaction_updated:   'Transaction updated',
     transaction_deleted:   'Transaction deleted',
     transfer_added:        'Transfer recorded',
+    credit_payment_added:  'Card payment recorded',
     recurring_added:       'Recurring expense recorded',
     recurring_deleted:     'Recurring expense deleted',
     installment_added:     'Installment plan recorded',
