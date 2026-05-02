@@ -67,6 +67,8 @@ export default {
     search_placeholder: 'Search...',
     filters_btn: 'Filters',
     clear_filters: 'Clear',
+    rows_per_page: 'Rows per page',
+    pagination_all: 'All',
     delete_title: 'Delete transaction',
     delete_confirm: 'Are you sure you want to delete',
   },

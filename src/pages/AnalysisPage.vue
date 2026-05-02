@@ -261,27 +261,29 @@ const isCurrentPeriod = computed(() => {
 })
 
 const periodBounds = computed(() => {
-  const c = cursor.value
-  const y = c.getFullYear()
-  const m = c.getMonth()
+  const c   = cursor.value
+  const y   = c.getFullYear()
+  const m   = c.getMonth()
+  const now = new Date()
+  const capToday = (d) => isCurrentPeriod.value && d > now ? now : d
 
   if (periodMode.value === 'month') {
     return {
       from: new Date(y, m, 1),
-      to:   new Date(y, m + 1, 0),
+      to:   capToday(new Date(y, m + 1, 0)),
     }
   }
   if (periodMode.value === 'quarter') {
     const q = Math.floor(m / 3)
     return {
       from: new Date(y, q * 3, 1),
-      to:   new Date(y, q * 3 + 3, 0),
+      to:   capToday(new Date(y, q * 3 + 3, 0)),
     }
   }
   if (periodMode.value === 'year') {
     return {
       from: new Date(y, 0, 1),
-      to:   new Date(y, 11, 31),
+      to:   capToday(new Date(y, 11, 31)),
     }
   }
   return null

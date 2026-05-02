@@ -67,6 +67,8 @@ export default {
     search_placeholder: 'Buscar...',
     filters_btn: 'Filtros',
     clear_filters: 'Limpiar',
+    rows_per_page: 'Filas por página',
+    pagination_all: 'Todos',
     delete_title: 'Eliminar transacción',
     delete_confirm: '¿Estás seguro que deseas eliminar',
   },

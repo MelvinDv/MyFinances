@@ -222,7 +222,9 @@
         :columns="columns"
         row-key="id"
         flat
-        :pagination="{ rowsPerPage: 10 }"
+        :pagination="{ rowsPerPage: 50, sortBy: 'date', descending: true }"
+        :rows-per-page-options="rowsPerPageOptions"
+        :rows-per-page-label="$t('transactions.rows_per_page')"
         :no-data-label="$t('transactions.no_data')"
       >
         <!-- Fecha -->
@@ -390,10 +392,9 @@ function onFormClose(val) {
 function currentMonthRange() {
   const now = new Date()
   const from = new Date(now.getFullYear(), now.getMonth(), 1)
-  const to   = new Date(now.getFullYear(), now.getMonth() + 1, 0)
   return {
     from: from.toISOString().split('T')[0],
-    to:   to.toISOString().split('T')[0],
+    to:   now.toISOString().split('T')[0],
   }
 }
 
@@ -418,6 +419,11 @@ const accountOptions = computed(() =>
 const categoryOptions = computed(() =>
   settingsStore.categories.map(c => c.name)
 )
+
+const rowsPerPageOptions = computed(() => [
+  50, 100, 200,
+  { label: t('transactions.pagination_all'), value: 0 },
+])
 
 const activeFiltersCount = computed(() => {
   const { from, to } = currentMonthRange()
