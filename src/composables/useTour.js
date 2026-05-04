@@ -1,19 +1,27 @@
 import { driver } from 'driver.js'
 import 'driver.js/dist/driver.css'
+import { useProfileStore } from 'src/stores/profile.store'
 
-const TOUR_KEY = 'myfinance_tour'
+const PHASE_KEY = 'myfinance_tour_phase'
 
 export function useTour() {
+  const profileStore = useProfileStore()
+
   function isCompleted() {
-    return localStorage.getItem(TOUR_KEY) === 'done'
+    return profileStore.tourCompleted
   }
 
   function getPhase() {
-    return localStorage.getItem(TOUR_KEY) // null | 'transactions' | 'done'
+    return localStorage.getItem(PHASE_KEY) // null | 'transactions'
   }
 
   function setPhase(phase) {
-    localStorage.setItem(TOUR_KEY, phase)
+    localStorage.setItem(PHASE_KEY, phase)
+  }
+
+  function markDone() {
+    localStorage.removeItem(PHASE_KEY)
+    profileStore.completeTour()
   }
 
   // Paso 1: Resalta el botón "Nueva Cuenta"
@@ -66,7 +74,7 @@ export function useTour() {
     return d
   }
 
-  // Pasos 3 y 4: Nueva Transacción + tab Análisis
+  // Pasos 3, 4 y 5: Nueva Transacción + tab Análisis + tab Configuración
   function runSteps3and4(t) {
     const d = driver({
       overlayOpacity: 0.5,
@@ -109,7 +117,7 @@ export function useTour() {
         },
       ],
       onDestroyStarted: () => {
-        setPhase('done')
+        markDone()
         d.destroy()
       },
     })

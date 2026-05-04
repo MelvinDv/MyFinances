@@ -121,6 +121,7 @@
               :label="$t('recurring.toggle_label')"
               color="dark"
               dense
+              :disable="!canAddRecurring && !form.recurring"
             />
             <q-icon
               name="help_outline"
@@ -130,6 +131,17 @@
             >
               <q-tooltip max-width="220px" anchor="top middle" self="bottom middle">
                 {{ $t('recurring.tooltip') }}
+              </q-tooltip>
+            </q-icon>
+            <q-icon
+              v-if="!canAddRecurring"
+              name="lock"
+              size="16px"
+              color="grey-4"
+              class="q-ml-xs cursor-pointer"
+            >
+              <q-tooltip max-width="220px" anchor="top middle" self="bottom middle">
+                {{ $t('plan.limit_recurring', { limit: FREE_RECURRING_LIMIT }) }}<br>{{ $t('plan.upgrade_hint') }}
               </q-tooltip>
             </q-icon>
           </div>
@@ -332,6 +344,7 @@ import { useRecurringStore } from 'stores/recurring_transactions.store'
 import { useAccountsStore } from 'stores/accounts.store'
 import { useSettingsStore } from 'stores/settings.store'
 import { useCurrency } from 'src/composables/useCurrency'
+import { usePlan } from 'src/composables/usePlan'
 
 const props = defineProps({
   modelValue:  { type: Boolean, default: false },
@@ -348,6 +361,7 @@ const transactionsStore = useTransactionsStore()
 const recurringStore    = useRecurringStore()
 const accountsStore     = useAccountsStore()
 const settingsStore     = useSettingsStore()
+const { canAddRecurring, FREE_RECURRING_LIMIT } = usePlan()
 
 const categories = computed(() => settingsStore.categories.map(c => c.name))
 

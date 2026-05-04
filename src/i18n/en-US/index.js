@@ -24,6 +24,14 @@ export default {
     settings: 'Settings',
   },
 
+  plan: {
+    limit_accounts:   'You reached the free plan account limit ({debit} debit, {credit} credit)',
+    limit_categories: 'Custom categories are exclusive to the Premium plan',
+    limit_recurring:  'You reached the {limit} recurring charges limit of the free plan',
+    limit_analysis:   'Advanced analysis is exclusive to the Premium plan',
+    upgrade_hint:     'Upgrade to Premium to unlock all features',
+  },
+
   common: {
     cancel: 'Cancel',
     delete: 'Delete',
@@ -253,11 +261,29 @@ export default {
     language_desc: 'Select the application language',
     currency: 'Currency',
     currency_desc: 'Select the currency to display amounts',
+    plan: 'Your plan',
+    plan_subtitle: 'Manage your subscription and feature access',
+    plan_current_free: 'Free Plan',
+    plan_current_premium: 'Premium Plan',
+    plan_free_desc: 'Basic access to the app\'s essential features',
+    plan_premium_desc: 'Full access to all features without limits',
+    plan_free_limits: 'Free plan limits',
+    plan_limit_1: 'Up to 2 debit accounts and 1 credit card',
+    plan_limit_2: 'Default categories only',
+    plan_limit_3: 'Up to 3 recurring charges',
+    plan_limit_4: 'Analysis for current month only',
+    plan_premium_features: 'Everything in free, plus:',
+    plan_feature_1: 'Unlimited accounts',
+    plan_feature_2: 'Custom categories',
+    plan_feature_3: 'Unlimited recurring charges',
+    plan_feature_4: 'Full analysis: quarter, year and history',
+    plan_upgrade_btn: 'Upgrade to Premium',
+    plan_coming_soon: 'Payments will be available soon',
   },
 
   user_menu: {
     signed_in_as: 'Signed in as',
-    settings: 'Settings',
+    settings: 'Account settings',
     sign_out: 'Sign out',
   },
 

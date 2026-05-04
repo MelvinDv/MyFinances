@@ -22,8 +22,14 @@
           color="dark"
           icon="add"
           :label="$t('accounts.new')"
+          :disable="!canAddAccount"
           @click="showForm = true"
-        />
+        >
+          <q-tooltip v-if="!canAddAccount">
+            {{ $t('plan.limit_accounts', { debit: FREE_DEBIT_LIMIT, credit: FREE_CREDIT_LIMIT }) }}<br>
+            {{ $t('plan.upgrade_hint') }}
+          </q-tooltip>
+        </q-btn>
       </div>
     </div>
 
@@ -222,6 +228,7 @@ import { useAccountsStore } from 'stores/accounts.store'
 import { useTransactionsStore } from 'stores/transactions.store'
 import { useCurrency } from 'src/composables/useCurrency'
 import { useTour } from 'src/composables/useTour'
+import { usePlan } from 'src/composables/usePlan'
 import AccountForm from 'components/accounts/AccountForm.vue'
 import CreditCardPaymentDialog from 'components/accounts/CreditCardPaymentDialog.vue'
 
@@ -231,6 +238,7 @@ const accountsStore = useAccountsStore()
 const transactionsStore = useTransactionsStore()
 const { formatCurrency } = useCurrency()
 const { isCompleted, getPhase, runStep1, runStep2 } = useTour()
+const { canAddAccount, FREE_DEBIT_LIMIT, FREE_CREDIT_LIMIT } = usePlan()
 
 const hidden = ref(false)
 const showForm = ref(false)

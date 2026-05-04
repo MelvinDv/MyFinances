@@ -11,18 +11,24 @@
         <div class="row items-center justify-between">
 
           <!-- Modos -->
-          <q-btn-toggle
-            v-model="periodMode"
-            :options="periodModeOptions"
-            unelevated
-            toggle-color="dark"
-            color="white"
-            text-color="grey-7"
-            no-caps
-            dense
-            class="period-toggle"
-            @update:model-value="resetToCurrentPeriod"
-          />
+          <div class="column" style="gap: 4px">
+            <q-btn-toggle
+              v-model="periodMode"
+              :options="periodModeOptions"
+              unelevated
+              toggle-color="dark"
+              color="white"
+              text-color="grey-7"
+              no-caps
+              dense
+              class="period-toggle"
+              @update:model-value="resetToCurrentPeriod"
+            />
+            <div v-if="!canUseAdvancedAnalysis" class="row items-center q-gutter-x-xs" style="opacity: 0.6">
+              <q-icon name="lock" size="11px" color="grey-6" />
+              <span class="text-caption text-grey-6" style="font-size: 11px">{{ $t('plan.limit_analysis') }}</span>
+            </div>
+          </div>
 
           <!-- Navegación -->
           <div class="row items-center q-gutter-sm">
@@ -210,6 +216,7 @@ import { useTransactionsStore } from 'src/stores/transactions.store'
 import { useAccountsStore } from 'src/stores/accounts.store'
 import { useSettingsStore } from 'src/stores/settings.store'
 import { useCurrency } from 'src/composables/useCurrency'
+import { usePlan } from 'src/composables/usePlan'
 
 const apexchart = VueApexCharts
 const { t, locale } = useI18n()
@@ -218,6 +225,7 @@ const { formatCurrency } = useCurrency()
 const transactionsStore = useTransactionsStore()
 const accountsStore = useAccountsStore()
 const settingsStore = useSettingsStore()
+const { canUseAdvancedAnalysis } = usePlan()
 
 // ── Selector de período ───────────────────────────────────────────────────────
 
@@ -226,9 +234,9 @@ const cursor = ref(new Date())
 
 const periodModeOptions = computed(() => [
   { label: t('analysis.period_month'),   value: 'month' },
-  { label: t('analysis.period_quarter'), value: 'quarter' },
-  { label: t('analysis.period_year'),    value: 'year' },
-  { label: t('analysis.period_all'),     value: 'all' },
+  { label: t('analysis.period_quarter'), value: 'quarter', disable: !canUseAdvancedAnalysis.value },
+  { label: t('analysis.period_year'),    value: 'year',    disable: !canUseAdvancedAnalysis.value },
+  { label: t('analysis.period_all'),     value: 'all',     disable: !canUseAdvancedAnalysis.value },
 ])
 
 function resetToCurrentPeriod() {

@@ -87,6 +87,7 @@ import { useAccountsStore } from 'src/stores/accounts.store'
 import { useTransactionsStore } from 'src/stores/transactions.store'
 import { useSettingsStore } from 'src/stores/settings.store'
 import { useRecurringStore } from 'src/stores/recurring_transactions.store'
+import { useProfileStore } from 'src/stores/profile.store'
 import { useTour } from 'src/composables/useTour'
 
 const route = useRoute()
@@ -99,6 +100,7 @@ const accountsStore     = useAccountsStore()
 const transactionsStore = useTransactionsStore()
 const settingsStore     = useSettingsStore()
 const recurringStore    = useRecurringStore()
+const profileStore      = useProfileStore()
 
 const { isCompleted: tourCompleted } = useTour()
 
@@ -113,6 +115,7 @@ onMounted(async () => {
     transactionsStore.fetchTransactions(),
     settingsStore.fetchCategories(),
     recurringStore.fetchRecurring(),
+    profileStore.fetchProfile(),
   ])
 
   // Auto-generar transacciones recurrentes vencidas este mes

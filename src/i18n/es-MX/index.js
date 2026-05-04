@@ -24,6 +24,14 @@ export default {
     settings: 'Configuración',
   },
 
+  plan: {
+    limit_accounts:   'Alcanzaste el límite de cuentas del plan gratuito ({debit} débito, {credit} crédito)',
+    limit_categories: 'Las categorías personalizadas son exclusivas del plan Premium',
+    limit_recurring:  'Alcanzaste el límite de {limit} cargos recurrentes del plan gratuito',
+    limit_analysis:   'El análisis avanzado es exclusivo del plan Premium',
+    upgrade_hint:     'Actualiza a Premium para desbloquear todas las funciones',
+  },
+
   common: {
     cancel: 'Cancelar',
     delete: 'Eliminar',
@@ -253,11 +261,29 @@ export default {
     language_desc: 'Selecciona el idioma de la aplicación',
     currency: 'Divisa',
     currency_desc: 'Selecciona la moneda para mostrar los montos',
+    plan: 'Tu plan',
+    plan_subtitle: 'Gestiona tu suscripción y acceso a funciones',
+    plan_current_free: 'Plan Gratuito',
+    plan_current_premium: 'Plan Premium',
+    plan_free_desc: 'Acceso básico a las funciones esenciales de la app',
+    plan_premium_desc: 'Acceso completo a todas las funciones sin límites',
+    plan_free_limits: 'Límites del plan gratuito',
+    plan_limit_1: 'Hasta 2 cuentas de débito y 1 de crédito',
+    plan_limit_2: 'Solo categorías predeterminadas',
+    plan_limit_3: 'Hasta 3 cargos recurrentes',
+    plan_limit_4: 'Análisis solo del mes actual',
+    plan_premium_features: 'Todo lo del plan gratuito, más:',
+    plan_feature_1: 'Cuentas ilimitadas',
+    plan_feature_2: 'Categorías personalizadas',
+    plan_feature_3: 'Cargos recurrentes ilimitados',
+    plan_feature_4: 'Análisis completo: trimestre, año e histórico',
+    plan_upgrade_btn: 'Actualizar a Premium',
+    plan_coming_soon: 'Los pagos estarán disponibles próximamente',
   },
 
   user_menu: {
     signed_in_as: 'Sesión iniciada como',
-    settings: 'Configuración',
+    settings: 'Configuración de cuenta',
     sign_out: 'Cerrar sesión',
   },
 

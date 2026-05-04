@@ -142,6 +142,56 @@
       </q-card-section>
     </q-card>
 
+    <!-- Plan -->
+    <q-card flat bordered class="settings-card q-mb-md">
+      <q-card-section>
+        <div class="row items-center q-mb-xs">
+          <q-icon name="workspace_premium" size="20px" class="q-mr-sm" />
+          <div class="text-subtitle1 text-weight-bold">{{ $t('user_settings.plan') }}</div>
+        </div>
+        <div class="text-caption text-grey-6 q-mb-lg">{{ $t('user_settings.plan_subtitle') }}</div>
+
+        <!-- Badge plan actual -->
+        <div class="row items-center q-gutter-sm q-mb-md">
+          <q-chip
+            :icon="isPremium ? 'star' : 'lock_open'"
+            :color="isPremium ? 'dark' : 'grey-3'"
+            :text-color="isPremium ? 'white' : 'grey-8'"
+            :label="isPremium ? $t('user_settings.plan_current_premium') : $t('user_settings.plan_current_free')"
+          />
+        </div>
+
+        <div class="text-caption text-grey-7 q-mb-md">
+          {{ isPremium ? $t('user_settings.plan_premium_desc') : $t('user_settings.plan_free_desc') }}
+        </div>
+
+        <!-- Límites (free) / Beneficios (premium) -->
+        <div class="text-caption text-weight-bold text-grey-8 q-mb-xs">
+          {{ isPremium ? $t('user_settings.plan_premium_features') : $t('user_settings.plan_free_limits') }}
+        </div>
+        <div class="column q-gutter-xs q-mb-lg">
+          <div v-for="(item, i) in planItems" :key="i" class="row items-center q-gutter-x-sm">
+            <q-icon
+              :name="isPremium ? 'check_circle' : 'remove_circle_outline'"
+              :color="isPremium ? 'positive' : 'grey-5'"
+              size="16px"
+            />
+            <span class="text-caption text-grey-7">{{ item }}</span>
+          </div>
+        </div>
+
+        <!-- Botón upgrade (solo free) -->
+        <q-btn
+          v-if="!isPremium"
+          unelevated
+          color="dark"
+          icon="workspace_premium"
+          :label="$t('user_settings.plan_upgrade_btn')"
+          @click="onUpgrade"
+        />
+      </q-card-section>
+    </q-card>
+
     <!-- Seguridad -->
     <q-card flat bordered class="settings-card">
       <q-card-section>
@@ -224,12 +274,41 @@ import { ref, computed, watch } from 'vue'
 import { useQuasar } from 'quasar'
 import { useI18n } from 'vue-i18n'
 import { useAuthStore } from 'src/stores/auth.store'
+import { usePlan } from 'src/composables/usePlan'
 import { supabase } from 'src/lib/supabase'
 
 const $q = useQuasar()
-const { locale } = useI18n()
+const { t, locale } = useI18n()
 
 const authStore = useAuthStore()
+const { isPremium } = usePlan()
+
+// ── Plan ──────────────────────────────────────────────────────────────────────
+
+const planItems = computed(() => isPremium.value
+  ? [
+      t('user_settings.plan_feature_1'),
+      t('user_settings.plan_feature_2'),
+      t('user_settings.plan_feature_3'),
+      t('user_settings.plan_feature_4'),
+    ]
+  : [
+      t('user_settings.plan_limit_1'),
+      t('user_settings.plan_limit_2'),
+      t('user_settings.plan_limit_3'),
+      t('user_settings.plan_limit_4'),
+    ]
+)
+
+function onUpgrade() {
+  $q.notify({
+    message: t('user_settings.plan_coming_soon'),
+    icon: 'workspace_premium',
+    color: 'dark',
+    position: 'bottom',
+    timeout: 3000,
+  })
+}
 
 // ── Perfil ────────────────────────────────────────────────────────────────────
 

@@ -19,8 +19,13 @@
             color="dark"
             size="sm"
             class="q-px-md"
+            :disable="!canManageCategories"
             @click="showCategoryForm = true"
-          />
+          >
+            <q-tooltip v-if="!canManageCategories">
+              {{ $t('plan.limit_categories') }}<br>{{ $t('plan.upgrade_hint') }}
+            </q-tooltip>
+          </q-btn>
         </div>
 
         <div class="q-mt-md categories-grid">
@@ -39,8 +44,16 @@
                 <q-icon :name="cat.icon" color="white" size="18px" />
               </div>
               <div class="col cat-name text-body2 text-weight-medium">{{ cat.name }}</div>
-              <q-btn icon="more_vert" flat round dense size="sm" color="grey-6">
-                <q-menu anchor="bottom right" self="top right" auto-close>
+              <q-btn
+                :icon="canManageCategories ? 'more_vert' : 'lock'"
+                flat round dense size="sm"
+                :color="canManageCategories ? 'grey-6' : 'grey-4'"
+                :disable="!canManageCategories"
+              >
+                <q-tooltip v-if="!canManageCategories">
+                  {{ $t('plan.limit_categories') }}
+                </q-tooltip>
+                <q-menu v-if="canManageCategories" anchor="bottom right" self="top right" auto-close>
                   <q-list dense style="min-width: 140px">
                     <q-item clickable @click="editCategory(cat)">
                       <q-item-section avatar>
@@ -204,6 +217,7 @@ import { useSettingsStore } from 'src/stores/settings.store'
 import { useAccountsStore } from 'src/stores/accounts.store'
 import { useRecurringStore } from 'src/stores/recurring_transactions.store'
 import { useCurrency } from 'src/composables/useCurrency'
+import { usePlan } from 'src/composables/usePlan'
 import CategoryForm from 'src/components/categories/CategoryForm.vue'
 import RecurringForm from 'src/components/recurring/RecurringForm.vue'
 
@@ -213,6 +227,7 @@ const settingsStore  = useSettingsStore()
 const accountsStore  = useAccountsStore()
 const recurringStore = useRecurringStore()
 const { formatCurrency } = useCurrency()
+const { canManageCategories } = usePlan()
 
 // ── Categorías ────────────────────────────────────────────────────────────────
 const showCategoryForm = ref(false)
