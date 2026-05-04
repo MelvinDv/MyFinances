@@ -1,4 +1,22 @@
 export default {
+  tour: {
+    step1_title: 'Welcome to MyFinances!',
+    step1_desc:  'To get started, you need to add at least one bank account or card.',
+    step2_title: 'Account created!',
+    step2_desc:  'You can now start recording your transactions. Tap here to go to Transactions.',
+    step3_title: 'New transaction',
+    step3_desc:  'Here you can record your expenses, income, or transfers between accounts.',
+    step4_title: 'Analysis',
+    step4_desc:  'Once you have transactions recorded, you will see financial charts here.',
+    step5_title: 'Settings',
+    step5_desc:  'Here you can configure your categories and manage your recurring charges.',
+    btn_ok:     'Got it',
+    btn_go:     "Let's go!",
+    btn_next:   'Next',
+    btn_prev:   'Previous',
+    btn_finish: 'Finish',
+  },
+
   nav: {
     transactions: 'Transactions',
     analysis: 'Analysis',

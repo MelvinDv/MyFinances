@@ -17,6 +17,7 @@
           @click="hidden = !hidden"
         />
         <q-btn
+          id="btn-nueva-cuenta"
           unelevated
           color="dark"
           icon="add"
@@ -36,13 +37,13 @@
         <div>
           <div class="text-caption text-white" style="opacity: 0.8">{{ $t('accounts.income') }}</div>
           <div class="text-subtitle1 text-white text-weight-bold">
-            {{ hidden ? '••••••' : formatCurrency(transactionsStore.totalIngresos) }}
+            {{ hidden ? '••••••' : formatCurrency(currentMonthIngresos) }}
           </div>
         </div>
         <div>
           <div class="text-caption text-white" style="opacity: 0.8">{{ $t('accounts.expenses') }}</div>
           <div class="text-subtitle1 text-white text-weight-bold">
-            {{ hidden ? '••••••' : formatCurrency(transactionsStore.totalGastos) }}
+            {{ hidden ? '••••••' : formatCurrency(currentMonthGastos) }}
           </div>
         </div>
       </div>
@@ -181,7 +182,7 @@
     </div>
 
     <!-- Modal: Nueva / Editar Cuenta -->
-    <AccountForm v-model="showForm" :account="selectedAccount" />
+    <AccountForm v-model="showForm" :account="selectedAccount" @account-created="onAccountCreated" />
 
     <!-- Modal: Pago TDC -->
     <CreditCardPaymentDialog
@@ -211,12 +212,13 @@
 </template>
 
 <script setup>
-import { ref, computed, watch } from 'vue'
+import { ref, computed, watch, onMounted, nextTick } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useQuasar } from 'quasar'
 import { useAccountsStore } from 'stores/accounts.store'
 import { useTransactionsStore } from 'stores/transactions.store'
 import { useCurrency } from 'src/composables/useCurrency'
+import { useTour } from 'src/composables/useTour'
 import AccountForm from 'components/accounts/AccountForm.vue'
 import CreditCardPaymentDialog from 'components/accounts/CreditCardPaymentDialog.vue'
 
@@ -225,9 +227,32 @@ const $q = useQuasar()
 const accountsStore = useAccountsStore()
 const transactionsStore = useTransactionsStore()
 const { formatCurrency } = useCurrency()
+const { isCompleted, getPhase, runStep1, runStep2 } = useTour()
 
 const hidden = ref(false)
 const showForm = ref(false)
+
+onMounted(async () => {
+  if (isCompleted()) return
+  await nextTick()
+  runStep1(t)
+})
+
+const accountJustCreated = ref(false)
+
+function onAccountCreated() {
+  if (isCompleted() || getPhase() === 'transactions') return
+  accountJustCreated.value = true
+  runStep2(t)
+}
+
+watch(showForm, (val) => {
+  if (val) return // abriendo el diálogo
+  if (isCompleted() || getPhase() === 'transactions') return
+  if (accountJustCreated.value) { accountJustCreated.value = false; return }
+  // Cerró sin crear cuenta — avanzar igual
+  runStep2(t)
+})
 const selectedAccount = ref(null)
 const showConfirm = ref(false)
 const toDelete = ref(null)
@@ -269,6 +294,25 @@ const accountTypeIcon = {
 
 const totalBalance = computed(() =>
   accountsStore.accounts.reduce((sum, a) => sum + a.balance, 0)
+)
+
+const currentMonthTransactions = computed(() => {
+  const now   = new Date()
+  const from  = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split('T')[0]
+  const to    = now.toISOString().split('T')[0]
+  return transactionsStore.transactions.filter(t => t.date >= from && t.date <= to)
+})
+
+const currentMonthIngresos = computed(() =>
+  currentMonthTransactions.value
+    .filter(t => t.type === 'ingreso')
+    .reduce((sum, t) => sum + t.amount, 0)
+)
+
+const currentMonthGastos = computed(() =>
+  currentMonthTransactions.value
+    .filter(t => t.type === 'gasto')
+    .reduce((sum, t) => sum + t.amount, 0)
 )
 
 // ── Lógica de próximo pago de cuotas ─────────────────────────────────────────

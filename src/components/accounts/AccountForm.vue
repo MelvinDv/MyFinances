@@ -144,7 +144,7 @@ const props = defineProps({
   modelValue: Boolean,
   account: { type: Object, default: null },
 })
-const emit = defineEmits(['update:modelValue'])
+const emit = defineEmits(['update:modelValue', 'account-created'])
 
 const { t } = useI18n()
 const $q = useQuasar()
@@ -219,6 +219,7 @@ function handleSubmit() {
       credit_limit:     form.value.credit_limit,
     })
     $q.notify({ message: t('notify.account_added'), color: 'positive', icon: 'check_circle', position: 'bottom', timeout: 2500 })
+    emit('account-created')
   }
 
   form.value = defaultForm()

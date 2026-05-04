@@ -8,6 +8,7 @@
         <div class="text-caption text-grey-6">{{ $t('transactions.subtitle') }}</div>
       </div>
       <q-btn
+        id="btn-nueva-transaccion"
         color="dark"
         icon="add"
         :label="$t('transactions.new')"
@@ -357,13 +358,14 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted, nextTick } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useQuasar } from 'quasar'
 import { useTransactionsStore } from 'stores/transactions.store'
 import { useAccountsStore } from 'stores/accounts.store'
 import { useSettingsStore } from 'stores/settings.store'
 import { useCurrency } from 'src/composables/useCurrency'
+import { useTour } from 'src/composables/useTour'
 import TransactionForm from 'components/transactions/TransactionForm.vue'
 
 const { t } = useI18n()
@@ -372,6 +374,14 @@ const $q = useQuasar()
 const store = useTransactionsStore()
 const accountsStore = useAccountsStore()
 const settingsStore = useSettingsStore()
+const { getPhase, runSteps3and4 } = useTour()
+
+onMounted(async () => {
+  if (getPhase() === 'transactions') {
+    await nextTick()
+    runSteps3and4(t)
+  }
+})
 
 const showForm = ref(false)
 const showConfirm = ref(false)

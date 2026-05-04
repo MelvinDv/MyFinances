@@ -60,6 +60,7 @@
           <q-tab
             v-for="tab in tabs"
             :key="tab.name"
+            :id="'tab-' + tab.name"
             :name="tab.name"
             :icon="tab.icon"
             :label="tab.label"
@@ -86,6 +87,7 @@ import { useAccountsStore } from 'src/stores/accounts.store'
 import { useTransactionsStore } from 'src/stores/transactions.store'
 import { useSettingsStore } from 'src/stores/settings.store'
 import { useRecurringStore } from 'src/stores/recurring_transactions.store'
+import { useTour } from 'src/composables/useTour'
 
 const route = useRoute()
 const router = useRouter()
@@ -97,6 +99,8 @@ const accountsStore     = useAccountsStore()
 const transactionsStore = useTransactionsStore()
 const settingsStore     = useSettingsStore()
 const recurringStore    = useRecurringStore()
+
+const { isCompleted: tourCompleted } = useTour()
 
 onMounted(async () => {
   // Aplicar preferencias guardadas
@@ -113,6 +117,11 @@ onMounted(async () => {
 
   // Auto-generar transacciones recurrentes vencidas este mes
   await recurringStore.generateDueTransactions()
+
+  // Redirigir a Cuentas si es primer ingreso
+  if (!tourCompleted() && route.path !== '/cuentas') {
+    router.push('/cuentas')
+  }
 })
 
 async function handleSignOut() {

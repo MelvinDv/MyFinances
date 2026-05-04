@@ -1,4 +1,22 @@
 export default {
+  tour: {
+    step1_title: '¡Bienvenido a MyFinances!',
+    step1_desc:  'Para empezar, primero tienes que agregar al menos una cuenta bancaria o tarjeta.',
+    step2_title: '¡Cuenta creada!',
+    step2_desc:  'Ya puedes empezar a registrar tus movimientos. Toca aquí para ir a Transacciones.',
+    step3_title: 'Nueva transacción',
+    step3_desc:  'Aquí puedes registrar tus gastos, ingresos o transferencias entre cuentas.',
+    step4_title: 'Análisis',
+    step4_desc:  'Una vez que tengas transacciones registradas, aquí verás gráficas de tus finanzas.',
+    step5_title: 'Configuración',
+    step5_desc:  'Aquí podrás configurar tus categorías y administrar tus cargos recurrentes.',
+    btn_ok:     'Entendido',
+    btn_go:     '¡Vamos!',
+    btn_next:   'Siguiente',
+    btn_prev:   'Anterior',
+    btn_finish: 'Finalizar',
+  },
+
   nav: {
     transactions: 'Transacciones',
     analysis: 'Análisis',
