@@ -132,8 +132,11 @@
               </div>
             </template>
 
-            <div v-else class="text-caption text-grey-5">
-              {{ $t('accounts.no_next_payment') }}
+            <div v-else class="row items-center justify-between">
+              <div class="text-caption text-grey-5">{{ $t('accounts.balance_owed') }}</div>
+              <div class="text-subtitle2 text-weight-bold text-negative">
+                {{ hidden ? '••••••' : '-' + formatCurrency(creditDebt(account)) }}
+              </div>
             </div>
 
             <!-- Barra de crédito utilizado: siempre visible si hay límite -->

@@ -74,7 +74,7 @@
             />
           </div>
           <div>
-            <div class="form-label">{{ $t('account_form.credit_limit') }} <span class="text-negative">*</span></div>
+            <div class="form-label">{{ $t('account_form.credit_line') }} <span class="text-negative">*</span></div>
             <q-input
               v-model.number="form.credit_limit"
               outlined
@@ -89,7 +89,10 @@
 
         <!-- Balance Inicial -->
         <div>
-          <div class="form-label">{{ $t('account_form.initial_balance') }} <span class="text-negative">*</span></div>
+          <div class="form-label">
+            {{ form.type === 'tarjeta_credito' ? $t('account_form.initial_balance_credit') : $t('account_form.initial_balance') }}
+            <span class="text-negative">*</span>
+          </div>
           <q-input
             v-model.number="form.balance"
             outlined
@@ -97,7 +100,7 @@
             type="number"
             prefix="$"
             placeholder="0.00"
-            :hint="$t('account_form.initial_balance_hint')"
+            :hint="form.type === 'tarjeta_credito' ? $t('account_form.initial_balance_credit_hint') : $t('account_form.initial_balance_hint')"
             hide-bottom-space
           />
         </div>
