@@ -140,6 +140,8 @@ export default {
     balance_owed: 'Balance',
     credit_used: 'Credit used',
     pay_btn: 'Make payment',
+    account_locked: 'Locked account',
+    account_locked_desc: 'Upgrade your plan to use this account',
     payment_due_today: 'Make your payment today!',
     payment_due_in: 'Due in {n} days',
   },

@@ -33,6 +33,22 @@ export function usePlan() {
 
   const canUseAdvancedAnalysis = computed(() => isPremium.value)
 
+  // IDs de cuentas que exceden el límite del plan free
+  const excessAccountIds = computed(() => {
+    if (isPremium.value) return new Set()
+    const credits = accountsStore.accounts.filter(a => a.type === 'tarjeta_credito')
+    const debits  = accountsStore.accounts.filter(a => a.type !== 'tarjeta_credito')
+    const excess  = [
+      ...credits.slice(FREE_CREDIT_LIMIT),
+      ...debits.slice(FREE_DEBIT_LIMIT),
+    ]
+    return new Set(excess.map(a => a.id))
+  })
+
+  function isExcessAccount(account) {
+    return excessAccountIds.value.has(account.id)
+  }
+
   return {
     isPremium,
     debitCount,
@@ -43,6 +59,8 @@ export function usePlan() {
     canManageCategories,
     canAddRecurring,
     canUseAdvancedAnalysis,
+    excessAccountIds,
+    isExcessAccount,
     FREE_DEBIT_LIMIT,
     FREE_CREDIT_LIMIT,
     FREE_RECURRING_LIMIT,

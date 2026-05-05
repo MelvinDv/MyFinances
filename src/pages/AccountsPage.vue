@@ -63,6 +63,7 @@
         flat
         bordered
         class="account-card col"
+        :style="isExcessAccount(account) ? 'opacity: 0.6' : ''"
       >
         <!-- Borde de color superior -->
         <div class="account-card-top" :style="{ background: account.color }" />
@@ -71,18 +72,25 @@
           <!-- Icono + nombre + menú -->
           <div class="row items-center justify-between q-mb-lg">
             <div class="row items-center q-gutter-sm">
-              <div class="account-icon" :style="{ background: account.color }">
-                <q-icon :name="accountTypeIcon[account.type]" size="18px" color="white" />
+              <div class="account-icon" :style="{ background: isExcessAccount(account) ? '#ccc' : account.color }">
+                <q-icon :name="isExcessAccount(account) ? 'lock' : accountTypeIcon[account.type]" size="18px" color="white" />
               </div>
               <div>
                 <div class="text-weight-bold" style="font-size: 14px">{{ account.label }}</div>
-                <div class="text-caption text-grey-5">{{ $t(`account_types.${account.type}`) }}</div>
+                <div v-if="isExcessAccount(account)" class="text-caption text-negative">
+                  {{ $t('accounts.account_locked') }}
+                </div>
+                <div v-else class="text-caption text-grey-5">{{ $t(`account_types.${account.type}`) }}</div>
               </div>
             </div>
             <q-btn flat round dense icon="more_vert" color="grey-5" size="sm">
               <q-menu anchor="bottom right" self="top right" auto-close>
                 <q-list dense style="min-width: 140px">
-                  <q-item clickable @click="editAccount(account)">
+                  <q-item
+                    clickable
+                    :disable="isExcessAccount(account)"
+                    @click="editAccount(account)"
+                  >
                     <q-item-section avatar>
                       <q-icon name="edit" size="16px" color="grey-7" />
                     </q-item-section>
@@ -238,7 +246,7 @@ const accountsStore = useAccountsStore()
 const transactionsStore = useTransactionsStore()
 const { formatCurrency } = useCurrency()
 const { isCompleted, getPhase, runStep1, runStep2 } = useTour()
-const { canAddAccount, FREE_DEBIT_LIMIT, FREE_CREDIT_LIMIT } = usePlan()
+const { canAddAccount, isExcessAccount, FREE_DEBIT_LIMIT, FREE_CREDIT_LIMIT } = usePlan()
 
 const hidden = ref(false)
 const showForm = ref(false)

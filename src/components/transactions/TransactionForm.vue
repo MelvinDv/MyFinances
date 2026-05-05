@@ -361,12 +361,14 @@ const transactionsStore = useTransactionsStore()
 const recurringStore    = useRecurringStore()
 const accountsStore     = useAccountsStore()
 const settingsStore     = useSettingsStore()
-const { canAddRecurring, FREE_RECURRING_LIMIT } = usePlan()
+const { canAddRecurring, isExcessAccount, FREE_RECURRING_LIMIT } = usePlan()
 
 const categories = computed(() => settingsStore.categories.map(c => c.name))
 
 const accountOptions = computed(() =>
-  accountsStore.accounts.map(a => ({
+  accountsStore.accounts
+    .filter(a => !isExcessAccount(a))
+    .map(a => ({
     ...a,
     label: `${t(`account_types.${a.type}`)} (${a.label ?? a.name})`,
   }))

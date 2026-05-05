@@ -140,6 +140,8 @@ export default {
     balance_owed: 'Saldo',
     credit_used: 'Crédito utilizado',
     pay_btn: 'Realizar pago',
+    account_locked: 'Cuenta bloqueada',
+    account_locked_desc: 'Actualiza tu plan para usar esta cuenta',
     payment_due_today: '¡Realiza el pago hoy!',
     payment_due_in: 'Por vencer: en {n} días',
   },
