@@ -1,14 +1,14 @@
 <template>
   <q-layout view="hHh lpR fFf">
-    <q-header bordered class="bg-white text-dark">
+    <q-header bordered :class="$q.dark.isActive ? 'bg-dark text-white' : 'bg-white text-dark'">
       <!-- Fila 1: Logo + User menu -->
       <div class="q-px-lg q-pt-md q-pb-sm row items-center justify-between">
         <div class="row items-center">
-          <q-icon name="account_balance_wallet" size="22px" color="dark" class="q-mr-xs" />
-          <span class="text-weight-bold text-dark" style="font-size: 16px">MyFinances</span>
+          <q-icon name="account_balance_wallet" size="22px" :color="$q.dark.isActive ? 'white' : 'dark'" class="q-mr-xs" />
+          <span class="text-weight-bold" :class="$q.dark.isActive ? 'text-white' : 'text-dark'" style="font-size: 16px">MyFinances</span>
         </div>
 
-        <q-btn flat round dense color="grey-7" size="sm">
+        <q-btn flat round dense :color="$q.dark.isActive ? 'grey-4' : 'grey-7'" size="sm">
           <q-icon name="account_circle" size="26px" />
           <q-menu anchor="bottom right" self="top right" auto-close style="border-radius: 10px; min-width: 200px">
             <q-list dense class="q-py-sm">
@@ -50,7 +50,7 @@
       <div class="navbar-tabs-row q-px-lg q-pb-sm">
         <q-tabs
           v-model="activeTab"
-          active-color="dark"
+          :active-color="$q.dark.isActive ? 'white' : 'dark'"
           indicator-color="transparent"
           align="left"
           dense
@@ -194,6 +194,25 @@ watch(
 
     &:hover:not(.q-tab--active) {
       background: #f8f8f8;
+    }
+  }
+}
+
+body.body--dark {
+  .navbar-tabs-row {
+    background: #1d1d1d;
+  }
+
+  .navbar-tabs .navbar-tab {
+    color: rgba(255, 255, 255, 0.6);
+
+    &.q-tab--active {
+      background: #2e2e2e;
+      color: rgba(255, 255, 255, 0.87);
+    }
+
+    &:hover:not(.q-tab--active) {
+      background: #2a2a2a;
     }
   }
 }

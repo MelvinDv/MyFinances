@@ -9,6 +9,91 @@
   border-radius: 12px;
 }
 
+// ── Dark mode overrides ───────────────────────────────────────────────────────
+body.body--dark {
+  // Sticky modal headers & footers (used in all dialog forms)
+  .sticky-header {
+    background: #1d1d1d !important;
+    border-bottom-color: #2e2e2e !important;
+  }
+
+  .sticky-footer {
+    background: #1d1d1d !important;
+    border-top-color: #2e2e2e !important;
+  }
+
+  // Form field labels
+  .form-label {
+    color: rgba(255, 255, 255, 0.87) !important;
+  }
+
+  // Transaction type toggle (Gasto / Ingreso / Transferencia)
+  .type-toggle {
+    background: #2a2a2a !important;
+  }
+
+  .type-btn {
+    color: rgba(255, 255, 255, 0.5) !important;
+
+    &.active {
+      background: #3a3a3a !important;
+      color: rgba(255, 255, 255, 0.87) !important;
+    }
+  }
+
+  // Installment section
+  .installment-wrapper {
+    background: #2a2a2a !important;
+  }
+
+  .month-btn {
+    background: #2a2a2a !important;
+    border-color: #444 !important;
+    color: rgba(255, 255, 255, 0.6) !important;
+
+    &.active {
+      background: #e0e0e0 !important;
+      color: #111 !important;
+      border-color: #e0e0e0 !important;
+    }
+
+    &:hover:not(.active) {
+      border-color: #666 !important;
+      color: rgba(255, 255, 255, 0.87) !important;
+    }
+  }
+
+  .installment-summary {
+    background: #2a2a2a !important;
+    border-color: #3a3a3a !important;
+  }
+
+  .summary-row {
+    color: rgba(255, 255, 255, 0.6) !important;
+  }
+
+  .summary-value {
+    color: rgba(255, 255, 255, 0.87) !important;
+  }
+
+  // Category form preview card
+  .preview-card {
+    background: #2a2a2a !important;
+    margin-top: 20px;
+  }
+
+  // q-btn flat color="dark" → make text readable on dark backgrounds
+  .q-btn.q-btn--flat.text-dark {
+    color: rgba(255, 255, 255, 0.7) !important;
+  }
+
+  // q-btn-toggle toggle-color="dark" → active button visible on dark card
+  .q-btn-toggle .q-btn.bg-dark {
+    background: rgba(255, 255, 255, 0.15) !important;
+    color: #fff !important;
+  }
+}
+
 // ── Driver.js tour overrides ───────────────────────────────────────────────────
 .driver-popover {
   background: #ffffff;

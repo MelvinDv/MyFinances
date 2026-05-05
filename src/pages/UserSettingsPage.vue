@@ -21,7 +21,7 @@
           </div>
           <div>
             <div class="form-label">{{ $t('user_settings.email') }}</div>
-            <q-input v-model="form.email" outlined dense readonly bg-color="grey-1" hide-bottom-space />
+            <q-input v-model="form.email" outlined dense readonly :bg-color="$q.dark.isActive ? 'grey-9' : 'grey-1'" hide-bottom-space />
           </div>
           <div>
             <q-btn
@@ -51,7 +51,7 @@
               <div class="text-body2 text-weight-medium">{{ $t('user_settings.notif_budget') }}</div>
               <div class="text-caption text-grey-6">{{ $t('user_settings.notif_budget_desc') }}</div>
             </div>
-            <q-toggle v-model="notifications.budget" color="dark" />
+            <q-toggle v-model="notifications.budget" :color="$q.dark.isActive ? 'grey-4' : 'dark'" />
           </div>
           <q-separator />
           <div class="row items-center justify-between notification-row">
@@ -59,7 +59,7 @@
               <div class="text-body2 text-weight-medium">{{ $t('user_settings.notif_summary') }}</div>
               <div class="text-caption text-grey-6">{{ $t('user_settings.notif_summary_desc') }}</div>
             </div>
-            <q-toggle v-model="notifications.summary" color="dark" />
+            <q-toggle v-model="notifications.summary" :color="$q.dark.isActive ? 'grey-4' : 'dark'" />
           </div>
           <q-separator />
           <div class="row items-center justify-between notification-row">
@@ -67,7 +67,7 @@
               <div class="text-body2 text-weight-medium">{{ $t('user_settings.notif_reminders') }}</div>
               <div class="text-caption text-grey-6">{{ $t('user_settings.notif_reminders_desc') }}</div>
             </div>
-            <q-toggle v-model="notifications.reminders" color="dark" />
+            <q-toggle v-model="notifications.reminders" :color="$q.dark.isActive ? 'grey-4' : 'dark'" />
           </div>
         </div>
       </q-card-section>
@@ -88,7 +88,7 @@
               <div class="text-body2 text-weight-medium">{{ $t('user_settings.dark_mode') }}</div>
               <div class="text-caption text-grey-6">{{ $t('user_settings.dark_mode_desc') }}</div>
             </div>
-            <q-toggle v-model="preferences.darkMode" color="dark" @update:model-value="toggleDarkMode" />
+            <q-toggle v-model="preferences.darkMode" :color="$q.dark.isActive ? 'grey-4' : 'dark'" @update:model-value="toggleDarkMode" />
           </div>
           <q-separator />
           <div class="row items-center justify-between notification-row">
@@ -96,7 +96,7 @@
               <div class="text-body2 text-weight-medium">{{ $t('user_settings.show_decimals') }}</div>
               <div class="text-caption text-grey-6">{{ $t('user_settings.show_decimals_desc') }}</div>
             </div>
-            <q-toggle v-model="preferences.showDecimals" color="dark" />
+            <q-toggle v-model="preferences.showDecimals" :color="$q.dark.isActive ? 'grey-4' : 'dark'" />
           </div>
           <q-separator />
           <div class="row items-center justify-between notification-row">

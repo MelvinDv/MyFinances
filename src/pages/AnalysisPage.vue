@@ -211,6 +211,7 @@
 <script setup>
 import { ref, computed } from 'vue'
 import { useI18n } from 'vue-i18n'
+import { useQuasar } from 'quasar'
 import VueApexCharts from 'vue3-apexcharts'
 import { useTransactionsStore } from 'src/stores/transactions.store'
 import { useAccountsStore } from 'src/stores/accounts.store'
@@ -220,6 +221,7 @@ import { usePlan } from 'src/composables/usePlan'
 
 const apexchart = VueApexCharts
 const { t, locale } = useI18n()
+const $q = useQuasar()
 const { formatCurrency } = useCurrency()
 
 const transactionsStore = useTransactionsStore()
@@ -339,12 +341,25 @@ const periodBalance = computed(() => periodTotalIngresos.value - periodTotalGast
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
-const baseChartOptions = {
-  chart: { toolbar: { show: false }, fontFamily: 'inherit' },
-  grid: { borderColor: '#e5e7eb', strokeDashArray: 4 },
-  dataLabels: { enabled: false },
-  tooltip: { y: { formatter: (v) => formatCurrency(v) } },
-}
+const baseChartOptions = computed(() => {
+  const isDark = $q.dark.isActive
+  return {
+    chart: {
+      toolbar: { show: false },
+      fontFamily: 'inherit',
+      foreColor: isDark ? 'rgba(255,255,255,0.6)' : '#373d3f',
+    },
+    grid: {
+      borderColor: isDark ? '#2e2e2e' : '#e5e7eb',
+      strokeDashArray: 4,
+    },
+    dataLabels: { enabled: false },
+    tooltip: {
+      theme: isDark ? 'dark' : 'light',
+      y: { formatter: (v) => formatCurrency(v) },
+    },
+  }
+})
 
 // ── Gastos por Categoría (Pie) ────────────────────────────────────────────────
 
@@ -366,11 +381,11 @@ const gastosPorCategoria = computed(() => {
 
 const pieSeries  = computed(() => gastosPorCategoria.value.map(g => g.amount))
 const pieOptions = computed(() => ({
-  ...baseChartOptions,
+  ...baseChartOptions.value,
   labels:  gastosPorCategoria.value.map(g => g.category),
   colors:  gastosPorCategoria.value.map(g => g.color),
-  legend:  { position: 'right', fontSize: '13px' },
-  tooltip: { y: { formatter: (v) => formatCurrency(v) } },
+  legend:  { position: 'right', fontSize: '13px', labels: { colors: $q.dark.isActive ? 'rgba(255,255,255,0.7)' : undefined } },
+  tooltip: { theme: $q.dark.isActive ? 'dark' : 'light', y: { formatter: (v) => formatCurrency(v) } },
 }))
 
 // ── Ingresos vs Gastos (Bar) ──────────────────────────────────────────────────
@@ -381,7 +396,7 @@ const flowBarSeries = computed(() => [{
 }])
 
 const flowBarOptions = computed(() => ({
-  ...baseChartOptions,
+  ...baseChartOptions.value,
   colors: ['#10b981', '#ef4444'],
   plotOptions: { bar: { distributed: true, borderRadius: 6, columnWidth: '45%' } },
   xaxis:  { categories: [t('analysis.income_label'), t('analysis.expenses_label')] },
@@ -409,7 +424,7 @@ const accountBarSeries = computed(() => [{
 }])
 
 const accountBarOptions = computed(() => ({
-  ...baseChartOptions,
+  ...baseChartOptions.value,
   colors: gastosPorCuenta.value.map(g => g.color),
   plotOptions: { bar: { distributed: true, borderRadius: 6, columnWidth: '45%' } },
   xaxis:  { categories: gastosPorCuenta.value.map(g => g.name) },
@@ -472,6 +487,12 @@ const topExpenses = computed(() => {
 .progress-bar :deep(.q-linear-progress__track) {
   background: #e5e7eb;
   opacity: 1;
+}
+
+body.body--dark .progress-bar { background: #2e2e2e; }
+
+body.body--dark .progress-bar :deep(.q-linear-progress__track) {
+  background: #2e2e2e;
 }
 
 .progress-bar :deep(.q-linear-progress__model) {
