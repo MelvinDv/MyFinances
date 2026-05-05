@@ -290,16 +290,25 @@ export default {
   },
 
   auth: {
-    subtitle_login: 'Inicia sesión para continuar',
-    subtitle_signup: 'Crea tu cuenta gratis',
+    title_login: 'Bienvenido de vuelta',
+    title_signup: 'Crea tu cuenta',
+    subtitle_login: 'Ingresa a tu cuenta para continuar',
+    subtitle_signup: 'Comienza a controlar tus finanzas',
     email: 'Correo electrónico',
     password: 'Contraseña',
-    submit_login: 'Iniciar sesión',
+    submit_login: 'Iniciar Sesión',
     submit_signup: 'Crear cuenta',
     switch_login: '¿Ya tienes cuenta? Inicia sesión',
     switch_signup: '¿No tienes cuenta? Regístrate',
     confirm_password: 'Confirmar contraseña',
     password_mismatch: 'Las contraseñas no coinciden',
+    remember_me: 'Recordarme',
+    forgot_password: '¿Olvidaste tu contraseña?',
+    or_continue: 'O continúa con',
+    no_account: '¿No tienes una cuenta?',
+    register_free: 'Regístrate gratis',
+    have_account: '¿Ya tienes una cuenta?',
+    signin_link: 'Inicia sesión',
   },
 
   installments: {

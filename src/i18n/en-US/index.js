@@ -290,16 +290,25 @@ export default {
   },
 
   auth: {
-    subtitle_login: 'Sign in to continue',
-    subtitle_signup: 'Create your free account',
+    title_login: 'Welcome back',
+    title_signup: 'Create your account',
+    subtitle_login: 'Sign in to your account to continue',
+    subtitle_signup: 'Start taking control of your finances',
     email: 'Email',
     password: 'Password',
-    submit_login: 'Sign in',
+    submit_login: 'Sign In',
     submit_signup: 'Create account',
     switch_login: 'Already have an account? Sign in',
     switch_signup: "Don't have an account? Sign up",
     confirm_password: 'Confirm password',
     password_mismatch: 'Passwords do not match',
+    remember_me: 'Remember me',
+    forgot_password: 'Forgot your password?',
+    or_continue: 'Or continue with',
+    no_account: "Don't have an account?",
+    register_free: 'Sign up for free',
+    have_account: 'Already have an account?',
+    signin_link: 'Sign in',
   },
 
   installments: {
