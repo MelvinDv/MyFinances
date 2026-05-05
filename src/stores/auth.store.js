@@ -36,10 +36,27 @@ export const useAuthStore = defineStore('auth', () => {
     return !err
   }
 
+  async function signInWithGoogle() {
+    loading.value = true
+    error.value = null
+    const { error: err } = await supabase.auth.signInWithOAuth({
+      provider: 'google',
+      options: {
+        redirectTo: window.location.origin,
+      },
+    })
+    if (err) {
+      error.value = err.message
+      loading.value = false
+    }
+    // Si no hay error, el navegador redirige a Google — loading queda activo
+    return !err
+  }
+
   async function signOut() {
     await supabase.auth.signOut()
     user.value = null
   }
 
-  return { user, loading, error, initialize, signIn, signUp, signOut }
+  return { user, loading, error, initialize, signIn, signUp, signInWithGoogle, signOut }
 })
