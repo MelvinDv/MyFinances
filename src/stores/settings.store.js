@@ -21,7 +21,8 @@ export const useSettingsStore = defineStore('settings', () => {
     const { data, error } = await supabase
       .from('categories')
       .select('*')
-      .order('created_at')
+      .eq('is_active', true)
+      .order('sort_order')
     if (error) return
 
     if (data.length === 0) {
@@ -33,7 +34,12 @@ export const useSettingsStore = defineStore('settings', () => {
 
   async function seedDefaultCategories() {
     const { data: { user } } = await supabase.auth.getUser()
-    const rows = DEFAULT_CATEGORIES.map(c => ({ ...c, user_id: user.id }))
+    const rows = DEFAULT_CATEGORIES.map((c, i) => ({
+      ...c,
+      user_id:    user.id,
+      is_default: true,
+      sort_order: i,
+    }))
     const { data, error } = await supabase.from('categories').insert(rows).select()
     if (!error) categories.value = data
   }
@@ -62,7 +68,10 @@ export const useSettingsStore = defineStore('settings', () => {
   }
 
   async function deleteCategory(id) {
-    const { error } = await supabase.from('categories').delete().eq('id', id)
+    const { error } = await supabase
+      .from('categories')
+      .update({ is_active: false })
+      .eq('id', id)
     if (!error) {
       const index = categories.value.findIndex(c => c.id === id)
       if (index !== -1) categories.value.splice(index, 1)

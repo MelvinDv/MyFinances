@@ -81,6 +81,7 @@ export const useTransactionsStore = defineStore('transactions', () => {
           amount:                   plan.monthly_payment,
           description:              plan.description,
           category:                 plan.category,
+          category_id:              plan.category_id ?? null,
           account_id:               plan.account_id,
           account_name:             plan.account_name,
           date:                     d.toISOString().split('T')[0],

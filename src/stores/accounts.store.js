@@ -9,7 +9,8 @@ export const useAccountsStore = defineStore('accounts', () => {
     const { data, error } = await supabase
       .from('accounts')
       .select('*')
-      .order('created_at')
+      .eq('is_active', true)
+      .order('sort_order')
     if (!error) accounts.value = data
   }
 
@@ -37,7 +38,10 @@ export const useAccountsStore = defineStore('accounts', () => {
   }
 
   async function deleteAccount(id) {
-    const { error } = await supabase.from('accounts').delete().eq('id', id)
+    const { error } = await supabase
+      .from('accounts')
+      .update({ is_active: false })
+      .eq('id', id)
     if (!error) {
       const index = accounts.value.findIndex(a => a.id === id)
       if (index !== -1) accounts.value.splice(index, 1)

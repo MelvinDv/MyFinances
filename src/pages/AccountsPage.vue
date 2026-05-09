@@ -1,105 +1,71 @@
 <template>
-  <q-page class="q-pa-lg">
+  <q-page class="page-accounts">
 
-    <!-- Encabezado -->
-    <div class="row items-center justify-between q-mb-lg">
-      <div>
-        <div class="text-h5 text-weight-bold">{{ $t('accounts.title') }}</div>
-        <div class="text-caption text-grey-6">{{ $t('accounts.subtitle') }}</div>
-      </div>
-      <div class="row q-gutter-sm">
+    <!-- Header -->
+    <div class="ac-header">
+      <span class="ac-title">{{ $t('accounts.title') }}</span>
+      <div class="row items-center" style="gap: 4px">
         <q-btn
-          flat
-          bordered
+          flat dense round
           :icon="hidden ? 'visibility' : 'visibility_off'"
-          :label="hidden ? $t('accounts.show') : $t('accounts.hide')"
-          color="dark"
+          size="11px" color="grey-5"
           @click="hidden = !hidden"
         />
         <q-btn
           id="btn-nueva-cuenta"
-          unelevated
-          color="dark"
+          flat dense round
           icon="add"
-          :label="$t('accounts.new')"
+          size="11px" color="grey-7"
           :disable="!canAddAccount"
           @click="showForm = true"
         >
           <q-tooltip v-if="!canAddAccount">
-            {{ $t('plan.limit_accounts', { debit: FREE_DEBIT_LIMIT, credit: FREE_CREDIT_LIMIT }) }}<br>
-            {{ $t('plan.upgrade_hint') }}
+            {{ $t('plan.limit_accounts', { debit: FREE_DEBIT_LIMIT, credit: FREE_CREDIT_LIMIT }) }}
           </q-tooltip>
         </q-btn>
       </div>
     </div>
 
-    <!-- Card Balance Total -->
-    <q-card flat class="balance-card q-mb-lg q-pa-lg">
-      <div class="text-caption text-white" style="opacity: 0.8">{{ $t('accounts.total_balance') }}</div>
-      <div class="text-h4 text-white text-weight-bold q-my-sm">
-        {{ hidden ? '••••••' : formatCurrency(totalBalance) }}
-      </div>
-      <div class="row q-mt-md" style="gap: 80px">
-        <div>
-          <div class="text-caption text-white" style="opacity: 0.8">{{ $t('accounts.income') }}</div>
-          <div class="text-subtitle1 text-white text-weight-bold">
-            {{ hidden ? '••••••' : formatCurrency(currentMonthIngresos) }}
-          </div>
-        </div>
-        <div>
-          <div class="text-caption text-white" style="opacity: 0.8">{{ $t('accounts.expenses') }}</div>
-          <div class="text-subtitle1 text-white text-weight-bold">
-            {{ hidden ? '••••••' : formatCurrency(currentMonthGastos) }}
-          </div>
-        </div>
-      </div>
-    </q-card>
-
-    <!-- Cards por cuenta -->
-    <div class="row q-gutter-md">
-      <q-card
+    <!-- Account cards -->
+    <div class="ac-list">
+      <div
         v-for="account in accountsStore.accounts"
         :key="account.id"
-        flat
-        bordered
-        class="account-card col"
-        :style="isExcessAccount(account) ? 'opacity: 0.6' : ''"
+        class="ac-card"
+        :style="isExcessAccount(account) ? 'opacity:0.5' : ''"
       >
-        <!-- Borde de color superior -->
-        <div class="account-card-top" :style="{ background: account.color }" />
-
-        <q-card-section>
-          <!-- Icono + nombre + menú -->
-          <div class="row items-center justify-between q-mb-lg">
-            <div class="row items-center q-gutter-sm">
-              <div class="account-icon" :style="{ background: isExcessAccount(account) ? '#ccc' : account.color }">
-                <q-icon :name="isExcessAccount(account) ? 'lock' : accountTypeIcon[account.type]" size="18px" color="white" />
-              </div>
-              <div>
-                <div class="text-weight-bold" style="font-size: 14px">{{ account.label }}</div>
-                <div v-if="isExcessAccount(account)" class="text-caption text-negative">
-                  {{ $t('accounts.account_locked') }}
-                </div>
-                <div v-else class="text-caption text-grey-5">{{ $t(`account_types.${account.type}`) }}</div>
-              </div>
+        <!-- Top row: name/type + balance + menu -->
+        <div class="ac-card-top">
+          <div>
+            <div class="ac-card-name">{{ account.label }}</div>
+            <div class="ac-card-type">
+              {{ $t(`account_types.${account.type}`) }}
+              <template v-if="account.type === 'tarjeta_credito' && account.cut_date">
+                · corte {{ account.cut_date }}
+              </template>
             </div>
-            <q-btn flat round dense icon="more_vert" color="grey-5" size="sm">
+          </div>
+          <div class="row items-center" style="gap: 4px">
+            <div class="ac-card-balance">
+              {{ hidden ? '••••' : formatCurrency(
+                account.type === 'tarjeta_credito' && account.credit_limit
+                  ? account.credit_limit - creditDebt(account)
+                  : account.balance
+              ) }}
+            </div>
+            <q-btn flat round dense icon="more_vert" size="9px" color="grey-4">
               <q-menu anchor="bottom right" self="top right" auto-close>
-                <q-list dense style="min-width: 140px">
-                  <q-item
-                    clickable
-                    :disable="isExcessAccount(account)"
-                    @click="editAccount(account)"
-                  >
+                <q-list dense style="min-width: 130px">
+                  <q-item clickable :disable="isExcessAccount(account)" @click="editAccount(account)">
                     <q-item-section avatar>
-                      <q-icon name="edit" size="16px" color="grey-7" />
+                      <q-icon name="edit" size="15px" color="grey-7" />
                     </q-item-section>
                     <q-item-section>{{ $t('common.edit') }}</q-item-section>
                   </q-item>
                   <q-separator />
                   <q-item clickable @click="confirmDelete(account)">
                     <q-item-section avatar>
-                      <q-icon name="delete" size="16px" color="negative" />
+                      <q-icon name="delete" size="15px" color="negative" />
                     </q-item-section>
                     <q-item-section class="text-negative">{{ $t('common.delete') }}</q-item-section>
                   </q-item>
@@ -107,110 +73,80 @@
               </q-menu>
             </q-btn>
           </div>
+        </div>
 
-          <!-- Balance -->
-          <div class="text-h5 text-weight-bold q-mb-xs">
-            {{ hidden ? '••••••' : formatCurrency(account.type === 'tarjeta_credito' && account.credit_limit
-              ? account.credit_limit - creditDebt(account)
-              : account.balance) }}
-          </div>
-          <div class="text-caption text-grey-5">{{ $t('accounts.available_balance') }}</div>
-
-          <!-- Sección TDC: próximo pago de cuotas -->
-          <template v-if="account.type === 'tarjeta_credito'">
-            <q-separator class="q-my-md" />
-
-            <template v-if="nextInstallmentPayment(account)">
-              <div class="row items-center justify-between">
-                <div>
-                  <div class="text-caption text-grey-5">{{ $t('accounts.next_payment') }}</div>
-                  <div
-                    class="text-subtitle1 text-weight-bold"
-                    :class="isPaymentUrgent(account) ? 'text-negative' : 'text-dark'"
-                  >
-                    {{ hidden ? '••••••' : formatCurrency(nextInstallmentPayment(account).amount) }}
-                  </div>
-                  <div
-                    v-if="nextInstallmentPayment(account).alreadyPaid > 0"
-                    class="text-caption text-positive"
-                  >
-                    Abonado: {{ formatCurrency(nextInstallmentPayment(account).alreadyPaid) }}
-                  </div>
-                </div>
-                <div class="text-right">
-                  <div class="text-caption text-grey-5">{{ $t('accounts.due') }}</div>
-                  <div class="text-caption text-weight-medium">
-                    {{ formatDueDate(nextInstallmentPayment(account).dueDate) }}
-                  </div>
-                </div>
-              </div>
-            </template>
-
-            <div v-else class="row items-center justify-between">
-              <div class="text-caption text-grey-5">{{ $t('accounts.balance_owed') }}</div>
-              <div class="text-subtitle2 text-weight-bold text-negative">
-                {{ hidden ? '••••••' : '-' + formatCurrency(creditDebt(account)) }}
-              </div>
-            </div>
-
-            <!-- Barra de crédito utilizado: siempre visible si hay límite -->
-            <template v-if="account.credit_limit">
-              <div class="row items-center justify-between q-mt-md q-mb-xs">
-                <div class="text-caption text-grey-5">{{ $t('accounts.credit_used') }}</div>
-                <div class="text-caption text-grey-6">
-                  {{ Math.round(creditUsedPercent(account)) }}%
-                </div>
-              </div>
-              <q-linear-progress
-                :value="creditUsedPercent(account) / 100"
-                :color="creditUsedPercent(account) > 80 ? 'negative' : creditUsedPercent(account) > 50 ? 'warning' : 'positive'"
-                rounded
-                size="6px"
-              />
-            </template>
-
-            <!-- Aviso de vencimiento -->
+        <!-- Credit card extras -->
+        <template v-if="account.type === 'tarjeta_credito' && account.credit_limit">
+          <div class="ac-bar">
             <div
-              v-if="paymentDaysLeft(account) !== null"
-              class="row items-center q-gutter-x-xs q-mt-sm"
-              :class="paymentDaysLeft(account) === 0 ? 'text-negative' : 'text-warning'"
-            >
-              <q-icon :name="paymentDaysLeft(account) === 0 ? 'error' : 'schedule'" size="xs" />
-              <span class="text-caption text-weight-medium">
-                {{ paymentDaysLeft(account) === 0
-                  ? $t('accounts.payment_due_today')
-                  : $t('accounts.payment_due_in', { n: paymentDaysLeft(account) }) }}
+              class="ac-bar-fill"
+              :style="{
+                width: Math.min(creditUsedPercent(account), 100) + '%',
+                background: account.color,
+                opacity: 0.5,
+              }"
+            />
+          </div>
+          <div class="ac-bar-footer">
+            <span>{{ hidden ? '••••' : formatCurrency(creditDebt(account)) }} usado</span>
+            <span>{{ formatCurrency(account.credit_limit) }}</span>
+          </div>
+
+          <template v-if="nextInstallmentPayment(account)">
+            <div class="ac-payment-row">
+              <span class="ac-payment-label">{{ $t('accounts.next_payment') }}</span>
+              <span class="ac-payment-amount" :class="isPaymentUrgent(account) ? 'text-negative' : ''">
+                {{ hidden ? '••••' : formatCurrency(nextInstallmentPayment(account).amount) }}
               </span>
             </div>
-
-            <!-- Botón de pago -->
-            <q-btn
-              unelevated
-              color="dark"
-              icon="credit_score"
-              :label="$t('accounts.pay_btn')"
-              class="full-width q-mt-md"
-              @click="openPaymentDialog(account)"
-            />
+            <div v-if="nextInstallmentPayment(account).alreadyPaid > 0" class="ac-paid-label">
+              Abonado: {{ formatCurrency(nextInstallmentPayment(account).alreadyPaid) }}
+            </div>
           </template>
+          <div v-else class="ac-payment-row">
+            <span class="ac-payment-label">{{ $t('accounts.balance_owed') }}</span>
+            <span class="ac-payment-amount text-negative">
+              {{ hidden ? '••••' : formatCurrency(creditDebt(account)) }}
+            </span>
+          </div>
 
-        </q-card-section>
-      </q-card>
+          <div
+            v-if="paymentDaysLeft(account) !== null"
+            class="ac-urgent"
+            :class="paymentDaysLeft(account) === 0 ? 'text-negative' : 'text-warning'"
+          >
+            <q-icon :name="paymentDaysLeft(account) === 0 ? 'error' : 'schedule'" size="12px" />
+            {{ paymentDaysLeft(account) === 0
+              ? $t('accounts.payment_due_today')
+              : $t('accounts.payment_due_in', { n: paymentDaysLeft(account) }) }}
+          </div>
+
+          <q-btn
+            unelevated color="dark" size="sm"
+            :label="$t('accounts.pay_btn')"
+            class="full-width q-mt-sm"
+            @click="openPaymentDialog(account)"
+          />
+        </template>
+      </div>
     </div>
 
-    <!-- Modal: Nueva / Editar Cuenta -->
-    <AccountForm v-model="showForm" :account="selectedAccount" @account-created="onAccountCreated" />
+    <!-- Total patrimony -->
+    <div class="ac-total">
+      <span class="ac-total-label">Patrimonio total</span>
+      <strong class="ac-total-value">{{ hidden ? '••••••' : formatCurrency(totalBalance) }}</strong>
+    </div>
 
-    <!-- Modal: Pago TDC -->
+    <!-- Modals -->
+    <AccountForm v-model="showForm" :account="selectedAccount" @account-created="onAccountCreated" />
     <CreditCardPaymentDialog
       v-model="showPaymentDialog"
       :account="paymentAccount"
       :suggested-amount="paymentAccount ? nextInstallmentPayment(paymentAccount)?.amount ?? null : null"
     />
 
-    <!-- Confirmación eliminar -->
     <q-dialog v-model="showConfirm">
-      <q-card style="min-width: 320px">
+      <q-card style="min-width: 300px">
         <q-card-section>
           <div class="text-h6">{{ $t('accounts.delete_title') }}</div>
           <div class="text-body2 q-mt-sm text-grey-7">
@@ -224,7 +160,6 @@
         </q-card-actions>
       </q-card>
     </q-dialog>
-
   </q-page>
 </template>
 
@@ -266,17 +201,17 @@ function onAccountCreated() {
 }
 
 watch(showForm, (val) => {
-  if (val) return // abriendo el diálogo
+  if (val) return
   if (isCompleted() || getPhase() === 'transactions') return
   if (accountJustCreated.value) { accountJustCreated.value = false; return }
-  // Cerró sin crear cuenta — avanzar igual
   runStep2(t)
 })
-const selectedAccount = ref(null)
-const showConfirm = ref(false)
-const toDelete = ref(null)
-const showPaymentDialog = ref(false)
-const paymentAccount = ref(null)
+
+const selectedAccount    = ref(null)
+const showConfirm        = ref(false)
+const toDelete           = ref(null)
+const showPaymentDialog  = ref(false)
+const paymentAccount     = ref(null)
 
 function openPaymentDialog(account) {
   paymentAccount.value = account
@@ -304,37 +239,10 @@ async function handleDelete() {
   toDelete.value = null
 }
 
-const accountTypeIcon = {
-  tarjeta_debito:  'credit_card',
-  tarjeta_credito: 'credit_score',
-  efectivo:        'account_balance_wallet',
-  otro:            'savings',
-}
-
 const totalBalance = computed(() =>
   accountsStore.accounts.reduce((sum, a) => sum + a.balance, 0)
 )
 
-const currentMonthTransactions = computed(() => {
-  const now   = new Date()
-  const from  = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split('T')[0]
-  const to    = now.toISOString().split('T')[0]
-  return transactionsStore.transactions.filter(t => t.date >= from && t.date <= to)
-})
-
-const currentMonthIngresos = computed(() =>
-  currentMonthTransactions.value
-    .filter(t => t.type === 'ingreso')
-    .reduce((sum, t) => sum + t.amount, 0)
-)
-
-const currentMonthGastos = computed(() =>
-  currentMonthTransactions.value
-    .filter(t => t.type === 'gasto')
-    .reduce((sum, t) => sum + t.amount, 0)
-)
-
-// ── Lógica de próximo pago de cuotas ─────────────────────────────────────────
 
 function getNextDueDate(paymentDueDay) {
   const today = new Date()
@@ -355,62 +263,36 @@ function getLastCutDate(cutDay) {
     : new Date(today.getFullYear(), today.getMonth() - 1, cutDay)
 }
 
-/**
- * Cuotas del próximo periodo menos pagos ya realizados desde el último corte.
- */
 function nextInstallmentPayment(account) {
   if (!account.payment_due_date) return null
-
   const nextDue    = getNextDueDate(account.payment_due_date)
   const nextDueStr = nextDue.toISOString().split('T')[0]
-
   const dueTxs = transactionsStore.transactions.filter(t =>
-    t.account_id === account.id &&
-    t.installment_plan_id &&
-    t.date === nextDueStr
+    t.account_id === account.id && t.installment_plan_id && t.date === nextDueStr
   )
   if (!dueTxs.length) return null
-
   const totalDue = dueTxs.reduce((sum, t) => sum + t.amount, 0)
-
-  // Pagos de TDC realizados desde el último corte
   const lastCut    = getLastCutDate(account.cut_date)
   const lastCutStr = lastCut ? lastCut.toISOString().split('T')[0] : '1900-01-01'
-
   const alreadyPaid = transactionsStore.transactions
     .filter(t =>
       t.destination_account_id === account.id &&
-      t.type                   === 'transferencia' &&
-      t.category               === 'Pago TDC' &&
-      t.date                   >= lastCutStr
+      t.type === 'transferencia' &&
+      t.category === 'Pago TDC' &&
+      t.date >= lastCutStr
     )
     .reduce((sum, t) => sum + t.amount, 0)
-
-  return {
-    amount:      Math.max(0, totalDue - alreadyPaid),
-    totalDue,
-    alreadyPaid,
-    dueDate:     nextDue,
-    count:       dueTxs.length,
-  }
+  return { amount: Math.max(0, totalDue - alreadyPaid), totalDue, alreadyPaid, dueDate: nextDue, count: dueTxs.length }
 }
 
-/**
- * Devuelve true si la fecha límite de pago está a 5 días o menos.
- */
 function isPaymentUrgent(account) {
   if (!account.payment_due_date) return false
   const nextDue = getNextDueDate(account.payment_due_date)
   const today = new Date()
   today.setHours(0, 0, 0, 0)
-  const diffDays = (nextDue - today) / (1000 * 60 * 60 * 24)
-  return diffDays <= 5
+  return (nextDue - today) / (1000 * 60 * 60 * 24) <= 5
 }
 
-/**
- * Devuelve días restantes hasta el próximo pago (0 = hoy, 1–5 = próximo),
- * o null si faltan más de 5 días o no tiene fecha de pago.
- */
 function paymentDaysLeft(account) {
   if (!account.payment_due_date) return null
   const nextDue = getNextDueDate(account.payment_due_date)
@@ -420,11 +302,6 @@ function paymentDaysLeft(account) {
   return diffDays <= 5 ? diffDays : null
 }
 
-/**
- * Deuda real independientemente del modelo de balance:
- * - balance negativo (modelo deuda):     deuda = |balance|
- * - balance positivo (modelo disponible): deuda = credit_limit - balance
- */
 function creditDebt(account) {
   return account.balance >= 0
     ? Math.max(0, account.credit_limit - account.balance)
@@ -435,35 +312,79 @@ function creditUsedPercent(account) {
   if (!account.credit_limit || account.credit_limit <= 0) return 0
   return Math.min((creditDebt(account) / account.credit_limit) * 100, 100)
 }
-
-function formatDueDate(date) {
-  return date.toLocaleDateString('es-MX', { day: 'numeric', month: 'long' })
-}
 </script>
 
 <style scoped lang="scss">
-.balance-card {
-  background: #2563eb;
-  border-radius: 16px;
+.page-accounts {
+  padding: 20px 20px 24px;
+  background: #fff;
 }
 
-.account-card {
-  min-width: 200px;
+.ac-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+}
+.ac-title { font-size: 16px; font-weight: 500; color: #1a1a18; }
+
+.ac-list { display: flex; flex-direction: column; gap: 8px; }
+
+.ac-card {
+  border: 0.5px solid #E8E6E0;
   border-radius: 12px;
-  overflow: hidden;
+  padding: 12px;
 }
-
-.account-card-top {
-  height: 5px;
-  width: 100%;
+.ac-card-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 8px;
 }
+.ac-card-name { font-size: 13px; font-weight: 500; color: #1a1a18; }
+.ac-card-type { font-size: 11px; color: #C8C6BE; }
+.ac-card-balance { font-size: 16px; font-weight: 500; color: #1a1a18; letter-spacing: -0.5px; }
 
-.account-icon {
-  width: 36px;
-  height: 36px;
-  border-radius: 10px;
+.ac-bar {
+  height: 2px;
+  background: #F1EFE8;
+  border-radius: 2px;
+  margin-bottom: 4px;
+}
+.ac-bar-fill { height: 2px; border-radius: 2px; }
+.ac-bar-footer {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+.ac-bar-footer span { font-size: 11px; color: #C8C6BE; }
+
+.ac-payment-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 4px;
+}
+.ac-payment-label { font-size: 11px; color: #C8C6BE; }
+.ac-payment-amount { font-size: 13px; font-weight: 500; color: #1a1a18; }
+.ac-paid-label { font-size: 11px; color: #3B6D11; margin-top: 2px; }
+
+.ac-urgent {
+  font-size: 11px;
+  margin-top: 4px;
   display: flex;
   align-items: center;
-  justify-content: center;
+  gap: 3px;
 }
+
+.ac-total {
+  border-top: 0.5px solid #F1EFE8;
+  padding-top: 12px;
+  margin-top: 12px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.ac-total-label { font-size: 11px; color: #888780; }
+.ac-total-value { font-size: 15px; font-weight: 500; color: #1a1a18; }
 </style>

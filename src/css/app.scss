@@ -1,5 +1,23 @@
 // app global css
 
+:root {
+  --c-dark:      #1a1a18;
+  --c-border:    #E8E6E0;
+  --c-divider:   #F1EFE8;
+  --c-bg-stat:   #F8F7F4;
+  --c-inactive:  #D3D1C7;
+  --c-secondary: #888780;
+  --c-tertiary:  #C8C6BE;
+  --c-positive:  #3B6D11;
+  --c-negative:  #A32D2D;
+}
+
+// Base overrides
+body {
+  background: #ffffff;
+  color: #1a1a18;
+}
+
 .q-btn {
   border-radius: 8px;
   text-transform: capitalize;
@@ -9,9 +27,13 @@
   border-radius: 12px;
 }
 
+// Remove all page padding — each page handles its own
+.q-page {
+  background: #ffffff;
+}
+
 // ── Dark mode overrides ───────────────────────────────────────────────────────
 body.body--dark {
-  // Sticky modal headers & footers (used in all dialog forms)
   .sticky-header {
     background: #1d1d1d !important;
     border-bottom-color: #2e2e2e !important;
@@ -22,26 +44,22 @@ body.body--dark {
     border-top-color: #2e2e2e !important;
   }
 
-  // Form field labels
   .form-label {
     color: rgba(255, 255, 255, 0.87) !important;
   }
 
-  // Transaction type toggle (Gasto / Ingreso / Transferencia)
   .type-toggle {
     background: #2a2a2a !important;
   }
 
   .type-btn {
     color: rgba(255, 255, 255, 0.5) !important;
-
     &.active {
       background: #3a3a3a !important;
       color: rgba(255, 255, 255, 0.87) !important;
     }
   }
 
-  // Installment section
   .installment-wrapper {
     background: #2a2a2a !important;
   }
@@ -50,13 +68,11 @@ body.body--dark {
     background: #2a2a2a !important;
     border-color: #444 !important;
     color: rgba(255, 255, 255, 0.6) !important;
-
     &.active {
       background: #e0e0e0 !important;
       color: #111 !important;
       border-color: #e0e0e0 !important;
     }
-
     &:hover:not(.active) {
       border-color: #666 !important;
       color: rgba(255, 255, 255, 0.87) !important;
@@ -68,29 +84,34 @@ body.body--dark {
     border-color: #3a3a3a !important;
   }
 
-  .summary-row {
-    color: rgba(255, 255, 255, 0.6) !important;
-  }
+  .summary-row   { color: rgba(255, 255, 255, 0.6) !important; }
+  .summary-value { color: rgba(255, 255, 255, 0.87) !important; }
 
-  .summary-value {
-    color: rgba(255, 255, 255, 0.87) !important;
-  }
-
-  // Category form preview card
   .preview-card {
     background: #2a2a2a !important;
     margin-top: 20px;
   }
 
-  // q-btn flat color="dark" → make text readable on dark backgrounds
   .q-btn.q-btn--flat.text-dark {
     color: rgba(255, 255, 255, 0.7) !important;
   }
 
-  // q-btn-toggle toggle-color="dark" → active button visible on dark card
   .q-btn-toggle .q-btn.bg-dark {
     background: rgba(255, 255, 255, 0.15) !important;
     color: #fff !important;
+  }
+
+  // Page backgrounds in dark mode
+  .page-home,
+  .page-accounts,
+  .page-tx,
+  .page-analysis,
+  .page-settings {
+    background: #121212 !important;
+  }
+
+  .ac-card, .hm-add-btn {
+    border-color: #2e2e2e !important;
   }
 }
 
@@ -132,13 +153,8 @@ body.body--dark {
   cursor: pointer !important;
   text-shadow: none !important;
   box-shadow: none !important;
-
-  &:hover {
-    background: #333 !important;
-  }
-  &:focus {
-    outline: none;
-  }
+  &:hover { background: #333 !important; }
+  &:focus { outline: none; }
 }
 
 .driver-popover-next-btn,
@@ -153,13 +169,8 @@ body.body--dark {
   cursor: pointer;
   text-shadow: none;
   box-shadow: none;
-
-  &:hover {
-    background: #333;
-  }
-  &:focus {
-    outline: none;
-  }
+  &:hover { background: #333; }
+  &:focus { outline: none; }
 }
 
 .driver-popover-prev-btn {
@@ -173,26 +184,16 @@ body.body--dark {
   cursor: pointer;
   text-shadow: none;
   box-shadow: none;
-
-  &:hover {
-    background: #f5f5f5;
-  }
-  &:focus {
-    outline: none;
-  }
+  &:hover { background: #f5f5f5; }
+  &:focus { outline: none; }
 }
 
 .driver-popover-close-btn {
   color: #aaa;
   font-size: 18px;
   line-height: 1;
-
-  &:hover {
-    color: #1d1d1d;
-  }
-  &:focus {
-    outline: none;
-  }
+  &:hover { color: #1d1d1d; }
+  &:focus { outline: none; }
 }
 
 .driver-popover-progress-text {

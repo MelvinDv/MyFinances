@@ -104,6 +104,10 @@ const accountsStore   = useAccountsStore()
 
 const categories = computed(() => settingsStore.categories.map(c => c.name))
 
+const selectedCategoryId = computed(() =>
+  settingsStore.categories.find(c => c.name === form.value.category)?.id ?? null
+)
+
 const accountOptions = computed(() =>
   accountsStore.accounts.map(a => ({
     ...a,
@@ -146,6 +150,7 @@ async function handleSave() {
   await recurringStore.updateRecurring(props.recurring.id, {
     amount:       form.value.amount,
     category:     form.value.category,
+    category_id:  selectedCategoryId.value,
     account_id:   form.value.account.id,
     account_name: form.value.account.name ?? form.value.account.label,
     description:  form.value.description,

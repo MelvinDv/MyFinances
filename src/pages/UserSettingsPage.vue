@@ -1,333 +1,302 @@
 <template>
-  <q-page class="q-pa-lg">
+  <q-page class="page-settings">
 
-    <!-- Header -->
-    <div class="text-h4 text-weight-bold q-mb-xs">{{ $t('user_settings.title') }}</div>
-    <div class="text-body2 text-grey-6 q-mb-lg">{{ $t('user_settings.subtitle') }}</div>
+    <div class="st-title">{{ $t('user_settings.title') }}</div>
 
-    <!-- Perfil -->
-    <q-card flat bordered class="settings-card q-mb-md">
-      <q-card-section>
-        <div class="row items-center q-mb-xs">
-          <q-icon name="person_outline" size="20px" class="q-mr-sm" />
-          <div class="text-subtitle1 text-weight-bold">{{ $t('user_settings.profile') }}</div>
-        </div>
-        <div class="text-caption text-grey-6 q-mb-lg">{{ $t('user_settings.profile_subtitle') }}</div>
+    <!-- CUENTA -->
+    <div class="st-section">
+      <div class="st-section-label">cuenta</div>
 
-        <div class="column q-gutter-md" style="max-width: 480px">
-          <div>
-            <div class="form-label">{{ $t('user_settings.full_name') }}</div>
-            <q-input v-model="form.fullName" outlined dense hide-bottom-space />
-          </div>
-          <div>
-            <div class="form-label">{{ $t('user_settings.email') }}</div>
-            <q-input v-model="form.email" outlined dense readonly :bg-color="$q.dark.isActive ? 'grey-9' : 'grey-1'" hide-bottom-space />
-          </div>
-          <div>
-            <q-btn
-              unelevated
-              color="dark"
-              :label="$t('user_settings.save')"
-              :loading="savingProfile"
-              @click="saveProfile"
-            />
-          </div>
-        </div>
-      </q-card-section>
-    </q-card>
+      <div class="st-row">
+        <span class="st-row-text">{{ $t('user_settings.plan') }}</span>
+        <span class="st-badge">{{ isPremium ? $t('user_settings.plan_current_premium') : $t('user_settings.plan_current_free') }}</span>
+      </div>
 
-    <!-- Notificaciones -->
-    <q-card flat bordered class="settings-card q-mb-md">
-      <q-card-section>
-        <div class="row items-center q-mb-xs">
-          <q-icon name="notifications_none" size="20px" class="q-mr-sm" />
-          <div class="text-subtitle1 text-weight-bold">{{ $t('user_settings.notifications') }}</div>
-        </div>
-        <div class="text-caption text-grey-6 q-mb-lg">{{ $t('user_settings.notifications_subtitle') }}</div>
-
-        <div class="column q-gutter-sm">
-          <div class="row items-center justify-between notification-row">
-            <div>
-              <div class="text-body2 text-weight-medium">{{ $t('user_settings.notif_budget') }}</div>
-              <div class="text-caption text-grey-6">{{ $t('user_settings.notif_budget_desc') }}</div>
-            </div>
-            <q-toggle v-model="notifications.budget" :color="$q.dark.isActive ? 'grey-4' : 'dark'" />
-          </div>
-          <q-separator />
-          <div class="row items-center justify-between notification-row">
-            <div>
-              <div class="text-body2 text-weight-medium">{{ $t('user_settings.notif_summary') }}</div>
-              <div class="text-caption text-grey-6">{{ $t('user_settings.notif_summary_desc') }}</div>
-            </div>
-            <q-toggle v-model="notifications.summary" :color="$q.dark.isActive ? 'grey-4' : 'dark'" />
-          </div>
-          <q-separator />
-          <div class="row items-center justify-between notification-row">
-            <div>
-              <div class="text-body2 text-weight-medium">{{ $t('user_settings.notif_reminders') }}</div>
-              <div class="text-caption text-grey-6">{{ $t('user_settings.notif_reminders_desc') }}</div>
-            </div>
-            <q-toggle v-model="notifications.reminders" :color="$q.dark.isActive ? 'grey-4' : 'dark'" />
-          </div>
-        </div>
-      </q-card-section>
-    </q-card>
-
-    <!-- Preferencias -->
-    <q-card flat bordered class="settings-card q-mb-md">
-      <q-card-section>
-        <div class="row items-center q-mb-xs">
-          <q-icon name="language" size="20px" class="q-mr-sm" />
-          <div class="text-subtitle1 text-weight-bold">{{ $t('user_settings.preferences') }}</div>
-        </div>
-        <div class="text-caption text-grey-6 q-mb-lg">{{ $t('user_settings.preferences_subtitle') }}</div>
-
-        <div class="column q-gutter-sm">
-          <div class="row items-center justify-between notification-row">
-            <div>
-              <div class="text-body2 text-weight-medium">{{ $t('user_settings.dark_mode') }}</div>
-              <div class="text-caption text-grey-6">{{ $t('user_settings.dark_mode_desc') }}</div>
-            </div>
-            <q-toggle v-model="preferences.darkMode" :color="$q.dark.isActive ? 'grey-4' : 'dark'" @update:model-value="toggleDarkMode" />
-          </div>
-          <q-separator />
-          <div class="row items-center justify-between notification-row">
-            <div>
-              <div class="text-body2 text-weight-medium">{{ $t('user_settings.show_decimals') }}</div>
-              <div class="text-caption text-grey-6">{{ $t('user_settings.show_decimals_desc') }}</div>
-            </div>
-            <q-toggle v-model="preferences.showDecimals" :color="$q.dark.isActive ? 'grey-4' : 'dark'" />
-          </div>
-          <q-separator />
-          <div class="row items-center justify-between notification-row">
-            <div>
-              <div class="text-body2 text-weight-medium">{{ $t('user_settings.language') }}</div>
-              <div class="text-caption text-grey-6">{{ $t('user_settings.language_desc') }}</div>
-            </div>
-            <q-select
-              v-model="currentLocale"
-              :options="localeOptions"
-              option-value="value"
-              option-label="label"
-              emit-value
-              map-options
-              outlined
-              dense
-              hide-bottom-space
-              style="min-width: 150px"
-              @update:model-value="changeLocale"
-            />
-          </div>
-          <q-separator />
-          <div class="row items-center justify-between notification-row">
-            <div>
-              <div class="text-body2 text-weight-medium">{{ $t('user_settings.currency') }}</div>
-              <div class="text-caption text-grey-6">{{ $t('user_settings.currency_desc') }}</div>
-            </div>
-            <q-select
-              v-model="preferences.currency"
-              :options="currencyOptions"
-              option-value="value"
-              option-label="label"
-              emit-value
-              map-options
-              outlined
-              dense
-              hide-bottom-space
-              style="min-width: 200px"
-              @update:model-value="savePreferences"
-            />
-          </div>
-        </div>
-      </q-card-section>
-    </q-card>
-
-    <!-- Plan -->
-    <q-card flat bordered class="settings-card q-mb-md">
-      <q-card-section>
-        <div class="row items-center q-mb-xs">
-          <q-icon name="workspace_premium" size="20px" class="q-mr-sm" />
-          <div class="text-subtitle1 text-weight-bold">{{ $t('user_settings.plan') }}</div>
-        </div>
-        <div class="text-caption text-grey-6 q-mb-lg">{{ $t('user_settings.plan_subtitle') }}</div>
-
-        <!-- Badge plan actual -->
-        <div class="row items-center q-gutter-sm q-mb-md">
-          <q-chip
-            :icon="isPremium ? 'star' : 'lock_open'"
-            :color="isPremium ? 'dark' : 'grey-3'"
-            :text-color="isPremium ? 'white' : 'grey-8'"
-            :label="isPremium ? $t('user_settings.plan_current_premium') : $t('user_settings.plan_current_free')"
-          />
-        </div>
-
-        <div class="text-caption text-grey-7 q-mb-md">
-          {{ isPremium ? $t('user_settings.plan_premium_desc') : $t('user_settings.plan_free_desc') }}
-        </div>
-
-        <!-- Límites (free) / Beneficios (premium) -->
-        <div class="text-caption text-weight-bold text-grey-8 q-mb-xs">
-          {{ isPremium ? $t('user_settings.plan_premium_features') : $t('user_settings.plan_free_limits') }}
-        </div>
-        <div class="column q-gutter-xs q-mb-lg">
-          <div v-for="(item, i) in planItems" :key="i" class="row items-center q-gutter-x-sm">
-            <q-icon
-              :name="isPremium ? 'check_circle' : 'remove_circle_outline'"
-              :color="isPremium ? 'positive' : 'grey-5'"
-              size="16px"
-            />
-            <span class="text-caption text-grey-7">{{ item }}</span>
-          </div>
-        </div>
-
-        <!-- Botón upgrade (solo free) -->
-        <q-btn
-          v-if="!isPremium"
-          unelevated
-          color="dark"
-          icon="workspace_premium"
-          :label="$t('user_settings.plan_upgrade_btn')"
-          @click="onUpgrade"
+      <div class="st-row">
+        <span class="st-row-text">{{ $t('user_settings.currency') }}</span>
+        <q-select
+          v-model="preferences.currency"
+          :options="currencyOptions"
+          option-value="value"
+          option-label="label"
+          emit-value map-options
+          borderless dense hide-bottom-space
+          style="min-width: 110px; font-size: 13px; color: #888780"
+          @update:model-value="savePreferences"
         />
-      </q-card-section>
-    </q-card>
+      </div>
 
-    <!-- Seguridad -->
-    <q-card flat bordered class="settings-card">
-      <q-card-section>
-        <div class="row items-center q-mb-xs">
-          <q-icon name="shield_outlined" size="20px" class="q-mr-sm" />
-          <div class="text-subtitle1 text-weight-bold">{{ $t('user_settings.security') }}</div>
+      <div class="st-row" style="border-bottom: none">
+        <span class="st-row-text">{{ $t('user_settings.language') }}</span>
+        <q-select
+          v-model="currentLocale"
+          :options="localeOptions"
+          option-value="value"
+          option-label="label"
+          emit-value map-options
+          borderless dense hide-bottom-space
+          style="min-width: 110px; font-size: 13px; color: #888780"
+          @update:model-value="changeLocale"
+        />
+      </div>
+    </div>
+
+    <!-- APARIENCIA -->
+    <div class="st-section">
+      <div class="st-section-label">apariencia</div>
+
+      <div class="st-row">
+        <span class="st-row-text">{{ $t('user_settings.dark_mode') }}</span>
+        <div
+          :class="['st-toggle', { 'st-toggle-off': !preferences.darkMode }]"
+          @click="preferences.darkMode = !preferences.darkMode; toggleDarkMode(preferences.darkMode)"
+        >
+          <div class="st-toggle-knob" />
         </div>
-        <div class="text-caption text-grey-6 q-mb-lg">{{ $t('user_settings.security_subtitle') }}</div>
+      </div>
 
-        <div class="column q-gutter-md" style="max-width: 480px">
-          <div>
-            <div class="form-label">{{ $t('user_settings.new_password') }}</div>
+      <div class="st-row" style="border-bottom: none">
+        <span class="st-row-text">{{ $t('user_settings.show_decimals') }}</span>
+        <div
+          :class="['st-toggle', { 'st-toggle-off': !preferences.showDecimals }]"
+          @click="preferences.showDecimals = !preferences.showDecimals; savePreferences()"
+        >
+          <div class="st-toggle-knob" />
+        </div>
+      </div>
+    </div>
+
+    <!-- NOTIFICACIONES -->
+    <div class="st-section">
+      <div class="st-section-label">notificaciones</div>
+
+      <div class="st-row">
+        <span class="st-row-text">{{ $t('user_settings.notif_budget') }}</span>
+        <div
+          :class="['st-toggle', { 'st-toggle-off': !notifications.budget }]"
+          @click="notifications.budget = !notifications.budget; savePreferences()"
+        >
+          <div class="st-toggle-knob" />
+        </div>
+      </div>
+
+      <div class="st-row">
+        <span class="st-row-text">{{ $t('user_settings.notif_reminders') }}</span>
+        <div
+          :class="['st-toggle', { 'st-toggle-off': !notifications.reminders }]"
+          @click="notifications.reminders = !notifications.reminders; savePreferences()"
+        >
+          <div class="st-toggle-knob" />
+        </div>
+      </div>
+
+      <div class="st-row" style="border-bottom: none">
+        <span class="st-row-text">{{ $t('user_settings.notif_summary') }}</span>
+        <div
+          :class="['st-toggle', { 'st-toggle-off': !notifications.summary }]"
+          @click="notifications.summary = !notifications.summary; savePreferences()"
+        >
+          <div class="st-toggle-knob" />
+        </div>
+      </div>
+    </div>
+
+    <!-- CUENTA / PERFIL -->
+    <div class="st-section">
+      <div class="st-section-label">perfil</div>
+
+      <div class="st-row">
+        <span class="st-row-text">{{ $t('user_settings.full_name') }}</span>
+        <span class="st-row-value">{{ form.fullName || '—' }}</span>
+      </div>
+
+      <div class="st-row" style="border-bottom: none">
+        <span class="st-row-text">{{ form.email }}</span>
+        <q-btn
+          flat dense no-caps size="sm" color="grey-6"
+          :label="$t('user_settings.save')"
+          :loading="savingProfile"
+          @click="showProfileEdit = true"
+        />
+      </div>
+    </div>
+
+    <!-- OTROS -->
+    <div class="st-section">
+      <div class="st-section-label">más</div>
+
+      <div class="st-row" style="cursor:pointer" @click="$router.push('/configuracion')">
+        <span class="st-row-text">Categorías y recurrentes</span>
+        <i class="ti ti-chevron-right" style="font-size:14px;color:#C8C6BE" />
+      </div>
+
+      <div class="st-row" style="cursor:pointer" @click="showPasswordDialog = true">
+        <span class="st-row-text">{{ $t('user_settings.security') }}</span>
+        <i class="ti ti-chevron-right" style="font-size:14px;color:#C8C6BE" />
+      </div>
+
+      <div class="st-row" style="border-bottom: none; cursor:pointer" @click="handleSignOut">
+        <span class="st-row-text" style="color:#A32D2D">Cerrar sesión</span>
+        <i class="ti ti-logout" style="font-size:14px;color:#A32D2D" />
+      </div>
+    </div>
+
+    <!-- Upgrade banner (free plan only) -->
+    <div v-if="!isPremium" class="st-upgrade" @click="onUpgrade">
+      <span>Upgrade a Premium</span>
+      <i class="ti ti-star" style="font-size:14px" />
+    </div>
+
+    <!-- Dialog: editar perfil -->
+    <q-dialog v-model="showProfileEdit">
+      <q-card style="min-width:300px">
+        <q-card-section>
+          <div class="text-subtitle1 text-weight-bold q-mb-md">{{ $t('user_settings.profile') }}</div>
+          <div class="column q-gutter-md">
+            <q-input v-model="form.fullName" :label="$t('user_settings.full_name')" outlined dense hide-bottom-space />
+            <q-input v-model="form.email" :label="$t('user_settings.email')" outlined dense readonly bg-color="grey-1" hide-bottom-space />
+          </div>
+        </q-card-section>
+        <q-card-actions align="right">
+          <q-btn flat :label="$t('common.cancel')" v-close-popup />
+          <q-btn unelevated color="dark" :label="$t('user_settings.save')" :loading="savingProfile" @click="saveProfile" />
+        </q-card-actions>
+      </q-card>
+    </q-dialog>
+
+    <!-- Dialog: cambiar contraseña -->
+    <q-dialog v-model="showPasswordDialog">
+      <q-card style="min-width:300px">
+        <q-card-section>
+          <div class="text-subtitle1 text-weight-bold q-mb-md">{{ $t('user_settings.security') }}</div>
+          <div class="column q-gutter-md">
             <q-input
               v-model="passwordForm.newPassword"
               :type="showPassword ? 'text' : 'password'"
-              outlined
-              dense
-              hide-bottom-space
+              :label="$t('user_settings.new_password')"
+              outlined dense hide-bottom-space
             >
               <template #append>
-                <q-icon
-                  :name="showPassword ? 'visibility_off' : 'visibility'"
-                  class="cursor-pointer text-grey-5"
-                  @click="showPassword = !showPassword"
-                />
+                <q-icon :name="showPassword ? 'visibility_off' : 'visibility'" class="cursor-pointer text-grey-5" @click="showPassword = !showPassword" />
               </template>
             </q-input>
-          </div>
-          <div>
-            <div class="form-label">{{ $t('user_settings.confirm_new_password') }}</div>
             <q-input
               v-model="passwordForm.confirmPassword"
               :type="showPassword ? 'text' : 'password'"
-              outlined
-              dense
+              :label="$t('user_settings.confirm_new_password')"
+              outlined dense
               :error="passwordMismatch"
               :error-message="$t('auth.password_mismatch')"
               hide-bottom-space
             />
           </div>
-          <div>
-            <q-btn
-              unelevated
-              color="dark"
-              :label="$t('user_settings.change_password')"
-              :loading="savingPassword"
-              :disable="!canChangePassword"
-              @click="changePassword"
-            />
-          </div>
-        </div>
-
-        <!-- Feedback -->
-        <q-banner
-          v-if="passwordSuccess"
-          dense
-          rounded
-          class="bg-green-1 text-positive text-caption q-mt-md"
-          style="max-width: 480px"
-        >
-          {{ $t('user_settings.password_updated') }}
-        </q-banner>
-        <q-banner
-          v-if="passwordError"
-          dense
-          rounded
-          class="bg-red-1 text-negative text-caption q-mt-md"
-          style="max-width: 480px"
-        >
-          {{ passwordError }}
-        </q-banner>
-      </q-card-section>
-    </q-card>
+          <q-banner v-if="passwordSuccess" dense rounded class="bg-green-1 text-positive q-mt-md text-caption">
+            {{ $t('user_settings.password_updated') }}
+          </q-banner>
+          <q-banner v-if="passwordError" dense rounded class="bg-red-1 text-negative q-mt-md text-caption">
+            {{ passwordError }}
+          </q-banner>
+        </q-card-section>
+        <q-card-actions align="right">
+          <q-btn flat :label="$t('common.cancel')" v-close-popup />
+          <q-btn unelevated color="dark" :label="$t('user_settings.change_password')" :loading="savingPassword" :disable="!canChangePassword" @click="changePassword" />
+        </q-card-actions>
+      </q-card>
+    </q-dialog>
 
   </q-page>
 </template>
 
 <script setup>
-import { ref, computed, watch } from 'vue'
+import { ref, computed } from 'vue'
 import { useQuasar } from 'quasar'
 import { useI18n } from 'vue-i18n'
+import { useRouter } from 'vue-router'
 import { useAuthStore } from 'src/stores/auth.store'
 import { usePlan } from 'src/composables/usePlan'
 import { supabase } from 'src/lib/supabase'
 
-const $q = useQuasar()
+const $q     = useQuasar()
+const router = useRouter()
 const { t, locale } = useI18n()
 
 const authStore = useAuthStore()
 const { isPremium } = usePlan()
 
+// ── Sign out ──────────────────────────────────────────────────────────────────
+
+async function handleSignOut() {
+  await authStore.signOut()
+  router.push('/login')
+}
+
 // ── Plan ──────────────────────────────────────────────────────────────────────
 
-const planItems = computed(() => isPremium.value
-  ? [
-      t('user_settings.plan_feature_1'),
-      t('user_settings.plan_feature_2'),
-      t('user_settings.plan_feature_3'),
-      t('user_settings.plan_feature_4'),
-    ]
-  : [
-      t('user_settings.plan_limit_1'),
-      t('user_settings.plan_limit_2'),
-      t('user_settings.plan_limit_3'),
-      t('user_settings.plan_limit_4'),
-    ]
-)
-
 function onUpgrade() {
-  $q.notify({
-    message: t('user_settings.plan_coming_soon'),
-    icon: 'workspace_premium',
-    color: 'dark',
-    position: 'bottom',
-    timeout: 3000,
-  })
+  $q.notify({ message: t('user_settings.plan_coming_soon'), icon: 'workspace_premium', color: 'dark', position: 'bottom', timeout: 3000 })
 }
 
 // ── Perfil ────────────────────────────────────────────────────────────────────
 
 const form = ref({
   fullName: authStore.user?.user_metadata?.full_name ?? '',
-  email: authStore.user?.email ?? '',
+  email:    authStore.user?.email ?? '',
 })
 
-const savingProfile = ref(false)
+const savingProfile    = ref(false)
+const showProfileEdit  = ref(false)
+const showPasswordDialog = ref(false)
 
 async function saveProfile() {
   savingProfile.value = true
-  await supabase.auth.updateUser({
-    data: { full_name: form.value.fullName },
-  })
+  await supabase.auth.updateUser({ data: { full_name: form.value.fullName } })
   savingProfile.value = false
+  showProfileEdit.value = false
 }
 
-// ── Guardar preferencias ──────────────────────────────────────────────────────
+// ── Preferences ───────────────────────────────────────────────────────────────
+
+const notifications = ref({
+  budget:    authStore.user?.user_metadata?.notif_budget    ?? true,
+  summary:   authStore.user?.user_metadata?.notif_summary   ?? true,
+  reminders: authStore.user?.user_metadata?.notif_reminders ?? false,
+})
+
+const preferences = ref({
+  darkMode:     authStore.user?.user_metadata?.dark_mode     ?? false,
+  showDecimals: authStore.user?.user_metadata?.show_decimals ?? true,
+  currency:     authStore.user?.user_metadata?.currency      ?? 'MXN',
+})
+
+const currencyOptions = [
+  { value: 'MXN', label: 'MXN $' },
+  { value: 'USD', label: 'USD $' },
+  { value: 'EUR', label: 'EUR €' },
+  { value: 'COP', label: 'COP $' },
+  { value: 'ARS', label: 'ARS $' },
+  { value: 'CLP', label: 'CLP $' },
+  { value: 'BRL', label: 'BRL R$' },
+  { value: 'PEN', label: 'PEN S/' },
+  { value: 'GBP', label: 'GBP £' },
+  { value: 'CAD', label: 'CAD $' },
+]
+
+const localeOptions = [
+  { value: 'es-MX', label: '🇲🇽 Español' },
+  { value: 'en-US', label: '🇺🇸 English' },
+]
+
+const currentLocale = ref(locale.value)
+
+function changeLocale(val) {
+  locale.value = val
+  savePreferences()
+}
+
+function toggleDarkMode(val) {
+  $q.dark.set(val)
+  savePreferences()
+}
 
 async function savePreferences() {
   await supabase.auth.updateUser({
@@ -343,107 +312,126 @@ async function savePreferences() {
   })
 }
 
-// ── Notificaciones ────────────────────────────────────────────────────────────
+// ── Password ──────────────────────────────────────────────────────────────────
 
-const notifications = ref({
-  budget:    authStore.user?.user_metadata?.notif_budget    ?? true,
-  summary:   authStore.user?.user_metadata?.notif_summary   ?? true,
-  reminders: authStore.user?.user_metadata?.notif_reminders ?? false,
-})
-
-watch(notifications, savePreferences, { deep: true })
-
-// ── Preferencias ─────────────────────────────────────────────────────────────
-
-const preferences = ref({
-  darkMode:     authStore.user?.user_metadata?.dark_mode     ?? false,
-  showDecimals: authStore.user?.user_metadata?.show_decimals ?? true,
-  currency:     authStore.user?.user_metadata?.currency      ?? 'MXN',
-})
-
-const currencyOptions = [
-  { value: 'MXN', label: '🇲🇽 MXN — Peso Mexicano' },
-  { value: 'USD', label: '🇺🇸 USD — Dólar Americano' },
-  { value: 'EUR', label: '🇪🇺 EUR — Euro' },
-  { value: 'COP', label: '🇨🇴 COP — Peso Colombiano' },
-  { value: 'ARS', label: '🇦🇷 ARS — Peso Argentino' },
-  { value: 'CLP', label: '🇨🇱 CLP — Peso Chileno' },
-  { value: 'BRL', label: '🇧🇷 BRL — Real Brasileño' },
-  { value: 'PEN', label: '🇵🇪 PEN — Sol Peruano' },
-  { value: 'GBP', label: '🇬🇧 GBP — Libra Esterlina' },
-  { value: 'CAD', label: '🇨🇦 CAD — Dólar Canadiense' },
-]
-
-watch(() => preferences.value.showDecimals, savePreferences)
-
-function toggleDarkMode(val) {
-  $q.dark.set(val)
-  savePreferences()
-}
-
-const localeOptions = [
-  { value: 'es-MX', label: '🇲🇽 Español' },
-  { value: 'en-US', label: '🇺🇸 English' },
-]
-
-const currentLocale = ref(locale.value)
-
-function changeLocale(val) {
-  locale.value = val
-  savePreferences()
-}
-
-// ── Seguridad ─────────────────────────────────────────────────────────────────
-
-const passwordForm = ref({ newPassword: '', confirmPassword: '' })
-const showPassword = ref(false)
-const savingPassword = ref(false)
+const passwordForm    = ref({ newPassword: '', confirmPassword: '' })
+const showPassword    = ref(false)
+const savingPassword  = ref(false)
 const passwordSuccess = ref(false)
-const passwordError = ref(null)
+const passwordError   = ref(null)
 
 const passwordMismatch = computed(() =>
   passwordForm.value.confirmPassword.length > 0 &&
   passwordForm.value.newPassword !== passwordForm.value.confirmPassword
 )
-
 const canChangePassword = computed(() =>
   passwordForm.value.newPassword.length >= 6 &&
   passwordForm.value.newPassword === passwordForm.value.confirmPassword
 )
 
 async function changePassword() {
-  savingPassword.value = true
+  savingPassword.value  = true
   passwordSuccess.value = false
-  passwordError.value = null
-
-  const { error } = await supabase.auth.updateUser({
-    password: passwordForm.value.newPassword,
-  })
-
+  passwordError.value   = null
+  const { error } = await supabase.auth.updateUser({ password: passwordForm.value.newPassword })
   if (error) {
     passwordError.value = error.message
   } else {
     passwordSuccess.value = true
     passwordForm.value = { newPassword: '', confirmPassword: '' }
   }
-
   savingPassword.value = false
 }
 </script>
 
-<style scoped>
-.settings-card {
+<style scoped lang="scss">
+.page-settings {
+  padding: 20px 20px 24px;
+  background: #fff;
+}
+
+.st-title {
+  font-size: 16px;
+  font-weight: 500;
+  color: #1a1a18;
+  margin-bottom: 16px;
+}
+
+.st-section {
+  margin-bottom: 16px;
+}
+
+.st-section-label {
+  font-size: 10px;
+  color: #C8C6BE;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  margin-bottom: 6px;
+}
+
+.st-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 0;
+  border-bottom: 0.5px solid #F8F7F4;
+}
+
+.st-row-text {
+  font-size: 14px;
+  color: #1a1a18;
+}
+
+.st-row-value {
+  font-size: 13px;
+  color: #888780;
+}
+
+.st-badge {
+  background: #1a1a18;
+  color: #FAFAF8;
+  font-size: 11px;
+  padding: 2px 10px;
   border-radius: 12px;
 }
 
-.form-label {
-  font-size: 13px;
-  font-weight: 600;
-  margin-bottom: 6px;
-  color: #111;
+.st-toggle {
+  width: 32px;
+  height: 18px;
+  background: #1a1a18;
+  border-radius: 9px;
+  position: relative;
+  cursor: pointer;
+  transition: background 0.2s;
+  flex-shrink: 0;
+}
+.st-toggle-off { background: #D3D1C7; }
+
+.st-toggle-knob {
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: white;
+  transition: right 0.2s;
+}
+.st-toggle-off .st-toggle-knob {
+  right: auto;
+  left: 2px;
 }
 
-.notification-row {
-  padding: 8px 0;
+.st-upgrade {
+  margin-top: 8px;
+  background: #1a1a18;
+  color: #FAFAF8;
+  border-radius: 12px;
+  padding: 14px 16px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 14px;
+  cursor: pointer;
 }
 </style>
