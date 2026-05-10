@@ -48,27 +48,62 @@
           </div>
         </div>
 
-        <div v-if="amountStr" class="qs-continue-row">
-          <div class="qs-continue-btn" @click="step = 2">Continuar</div>
+        <div class="qs-continue-row">
+          <div :class="['qs-continue-btn', { 'qs-continue-disabled': !amountStr }]" @click="amountStr && (step = 2)">Continuar</div>
         </div>
-        <div v-else style="height:14px" />
       </template>
 
       <!-- ── PASO 2: categoría + detalles ────────────────────────── -->
       <template v-else>
-        <div class="qs-amount-wrap qs-amount-wrap-sm">
+        <div class="qs-amount-wrap qs-amount-wrap-sm" @click="step = 1">
           <div class="qs-amount">${{ amountStr }}</div>
         </div>
 
         <!-- Meta pills -->
         <div class="qs-meta-row">
-          <div class="qs-meta-pill">
+          <!-- Cuenta (no-transferencia) -->
+          <div v-if="!isTransfer" class="qs-meta-pill qs-meta-pill-select">
             <i class="ti ti-credit-card qs-meta-icon" />
-            <span class="qs-meta-text">{{ selectedAccount?.label ?? $t('transaction_form.payment_method') }}</span>
+            <q-select
+              v-model="form.account"
+              :options="accountOptions"
+              option-label="label"
+              borderless dense hide-bottom-space
+              class="qs-meta-select"
+            />
           </div>
-          <div class="qs-meta-pill">
+          <!-- Cuentas (transferencia) -->
+          <template v-else>
+            <div class="qs-meta-pill qs-meta-pill-select">
+              <i class="ti ti-arrow-right qs-meta-icon" />
+              <q-select
+                v-model="form.fromAccount"
+                :options="accountOptions"
+                option-label="label"
+                borderless dense hide-bottom-space
+                class="qs-meta-select"
+              />
+            </div>
+            <div class="qs-meta-pill qs-meta-pill-select">
+              <i class="ti ti-arrow-right qs-meta-icon" />
+              <q-select
+                v-model="form.toAccount"
+                :options="toAccountOptions"
+                option-label="label"
+                borderless dense hide-bottom-space
+                class="qs-meta-select"
+              />
+            </div>
+          </template>
+          <!-- Fecha -->
+          <div class="qs-meta-pill qs-meta-pill-date">
             <i class="ti ti-calendar qs-meta-icon" />
             <span class="qs-meta-text">{{ dateLabel }}</span>
+            <q-popup-proxy cover transition-show="scale" transition-hide="scale">
+              <q-date v-model="form.date" mask="YYYY-MM-DD" minimal>
+                <div class="row justify-end"><q-btn v-close-popup label="OK" color="dark" flat /></div>
+              </q-date>
+            </q-popup-proxy>
           </div>
         </div>
 
@@ -105,55 +140,6 @@
               class="qs-field-input"
             />
           </div>
-
-          <!-- Cuenta + Fecha (no-transferencia) -->
-          <div v-if="!isTransfer" class="qs-two-col">
-            <div class="qs-select-wrap">
-              <i class="ti ti-credit-card qs-field-icon" />
-              <q-select
-                v-model="form.account"
-                :options="accountOptions"
-                option-label="label"
-                borderless dense hide-bottom-space
-                class="qs-inline-select"
-              />
-            </div>
-            <div class="qs-date-wrap" @click="showDatePicker = true">
-              <i class="ti ti-calendar qs-field-icon" />
-              <span class="qs-date-text">{{ dateLabel }}</span>
-              <q-popup-proxy v-model="showDatePicker" cover transition-show="scale" transition-hide="scale">
-                <q-date v-model="form.date" mask="YYYY-MM-DD" minimal>
-                  <div class="row justify-end"><q-btn v-close-popup label="OK" color="dark" flat /></div>
-                </q-date>
-              </q-popup-proxy>
-            </div>
-          </div>
-
-          <!-- Cuentas (transferencia) -->
-          <template v-if="isTransfer">
-            <div class="qs-select-wrap q-mb-xs">
-              <i class="ti ti-arrow-right qs-field-icon" />
-              <q-select
-                v-model="form.fromAccount"
-                :options="accountOptions"
-                option-label="label"
-                :label="$t('transaction_form.from_account')"
-                borderless dense hide-bottom-space
-                class="qs-inline-select"
-              />
-            </div>
-            <div class="qs-select-wrap q-mb-xs">
-              <i class="ti ti-arrow-right qs-field-icon" />
-              <q-select
-                v-model="form.toAccount"
-                :options="toAccountOptions"
-                option-label="label"
-                :label="$t('transaction_form.to_account')"
-                borderless dense hide-bottom-space
-                class="qs-inline-select"
-              />
-            </div>
-          </template>
 
           <!-- Recurrente toggle -->
           <div
@@ -304,7 +290,6 @@ const { isExcessAccount } = usePlan()
 const step        = ref(1)
 const amountStr   = ref('')
 const showDetails = ref(false)
-const showDatePicker = ref(false)
 
 const quickAmounts = [50, 100, 200, 500]
 
@@ -407,8 +392,6 @@ function setType(type) {
 
 const isTransfer = computed(() => form.value.type === 'transferencia')
 const isCredit   = computed(() => form.value.account?.type === 'tarjeta_credito')
-
-const selectedAccount = computed(() => form.value.account)
 
 const selectedCategoryId = computed(() =>
   settingsStore.categories.find(c => c.name === form.value.category)?.id ?? null
@@ -593,7 +576,7 @@ async function handleUpdate(amount) {
   text-align: center;
   padding: 16px 14px 8px;
 }
-.qs-amount-wrap-sm { padding: 10px 14px 6px; }
+.qs-amount-wrap-sm { padding: 10px 14px 6px; cursor: pointer; margin-bottom: 12px; }
 
 .qs-amount {
   font-size: 42px;
@@ -664,6 +647,11 @@ async function handleUpdate(amount) {
   font-weight: 500;
   cursor: pointer;
 }
+.qs-continue-disabled {
+  background: #E8E6E0;
+  color: #C8C6BE;
+  cursor: default;
+}
 
 // ── Meta pills ────────────────────────────────────────────────────────────────
 .qs-meta-row {
@@ -683,6 +671,23 @@ async function handleUpdate(amount) {
 }
 .qs-meta-icon { font-size: 13px; color: #C8C6BE; flex-shrink: 0; }
 .qs-meta-text { font-size: 12px; color: #1a1a18; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+.qs-meta-pill-select { padding: 2px 10px; cursor: pointer; }
+.qs-meta-select {
+  flex: 1;
+  min-width: 0;
+  :deep(.q-field__native), :deep(.q-field__prefix), :deep(.q-field__suffix) {
+    font-size: 12px;
+    color: #1a1a18;
+    padding: 0;
+    min-height: unset;
+  }
+  :deep(.q-field__control) { height: 28px; min-height: unset; padding: 0; }
+  :deep(.q-field__append) { height: 28px; padding-left: 2px; }
+  :deep(.q-select__dropdown-icon) { font-size: 14px; color: #C8C6BE; }
+}
+
+.qs-meta-pill-date { cursor: pointer; position: relative; }
 
 // ── Category grid ─────────────────────────────────────────────────────────────
 .qs-cat-grid {

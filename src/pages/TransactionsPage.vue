@@ -73,19 +73,6 @@
       >{{ opt.label }}</span>
     </div>
 
-    <!-- New transaction button -->
-    <div class="tx-new-row">
-      <q-btn
-        id="btn-nueva-transaccion"
-        flat dense no-caps
-        icon="add"
-        :label="$t('transactions.new')"
-        color="grey-7"
-        size="sm"
-        @click="editingTransaction = null; showForm = true"
-      />
-    </div>
-
     <!-- Transaction groups -->
     <template v-if="groupedFiltered.length">
       <template v-for="group in groupedFiltered" :key="group.date">

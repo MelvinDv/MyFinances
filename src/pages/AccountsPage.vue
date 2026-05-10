@@ -31,10 +31,27 @@
       <div
         v-for="account in accountsStore.accounts"
         :key="account.id"
-        class="ac-card"
+        class="ac-card-wrap"
         :style="isExcessAccount(account) ? 'opacity:0.5' : ''"
       >
-        <!-- Top row: name/type + balance + menu -->
+        <!-- Acciones (reveladas al deslizar) -->
+        <div class="ac-card-actions">
+          <div class="ac-card-action ac-card-action-edit" @click="editAccount(account); snapAndSet(account.id, 0)">
+            <i class="ti ti-pencil" />
+          </div>
+          <div class="ac-card-action ac-card-action-delete" @click="confirmDelete(account); snapAndSet(account.id, 0)">
+            <i class="ti ti-trash" />
+          </div>
+        </div>
+
+        <!-- Tarjeta deslizable -->
+        <div
+          v-touch-pan.horizontal.prevent.mouse="(e) => onPan(account.id, e)"
+          class="ac-card"
+          :class="{ 'ac-card-snap': snapIds.has(account.id) }"
+          :style="{ transform: `translateX(${swipeOffset[account.id] || 0}px)` }"
+        >
+        <!-- Top row: name/type + balance -->
         <div class="ac-card-top">
           <div>
             <div class="ac-card-name">{{ account.label }}</div>
@@ -45,33 +62,12 @@
               </template>
             </div>
           </div>
-          <div class="row items-center" style="gap: 4px">
-            <div class="ac-card-balance">
-              {{ hidden ? '••••' : formatCurrency(
-                account.type === 'tarjeta_credito' && account.credit_limit
-                  ? account.credit_limit - creditDebt(account)
-                  : account.balance
-              ) }}
-            </div>
-            <q-btn flat round dense icon="more_vert" size="9px" color="grey-4">
-              <q-menu anchor="bottom right" self="top right" auto-close>
-                <q-list dense style="min-width: 130px">
-                  <q-item clickable :disable="isExcessAccount(account)" @click="editAccount(account)">
-                    <q-item-section avatar>
-                      <q-icon name="edit" size="15px" color="grey-7" />
-                    </q-item-section>
-                    <q-item-section>{{ $t('common.edit') }}</q-item-section>
-                  </q-item>
-                  <q-separator />
-                  <q-item clickable @click="confirmDelete(account)">
-                    <q-item-section avatar>
-                      <q-icon name="delete" size="15px" color="negative" />
-                    </q-item-section>
-                    <q-item-section class="text-negative">{{ $t('common.delete') }}</q-item-section>
-                  </q-item>
-                </q-list>
-              </q-menu>
-            </q-btn>
+          <div class="ac-card-balance">
+            {{ hidden ? '••••' : formatCurrency(
+              account.type === 'tarjeta_credito' && account.credit_limit
+                ? account.credit_limit - creditDebt(account)
+                : account.balance
+            ) }}
           </div>
         </div>
 
@@ -128,7 +124,8 @@
             @click="openPaymentDialog(account)"
           />
         </template>
-      </div>
+        </div> <!-- /ac-card -->
+      </div>   <!-- /ac-card-wrap -->
     </div>
 
     <!-- Total patrimony -->
@@ -212,6 +209,37 @@ const showConfirm        = ref(false)
 const toDelete           = ref(null)
 const showPaymentDialog  = ref(false)
 const paymentAccount     = ref(null)
+
+// ── Swipe ─────────────────────────────────────────────────────────────────────
+
+const SNAP_OPEN   = -88
+const swipeOffset = ref({})
+const snapIds     = ref(new Set())
+const openSwipeId = ref(null)
+
+function onPan(accountId, evt) {
+  if (openSwipeId.value && openSwipeId.value !== accountId) {
+    snapAndSet(openSwipeId.value, 0)
+    openSwipeId.value = null
+  }
+  const startOffset = openSwipeId.value === accountId ? SNAP_OPEN : 0
+  const raw = startOffset + evt.offset.x
+  swipeOffset.value[accountId] = Math.min(0, Math.max(SNAP_OPEN, raw))
+  if (evt.isFinal) {
+    const shouldOpen = swipeOffset.value[accountId] < SNAP_OPEN / 2
+    snapAndSet(accountId, shouldOpen ? SNAP_OPEN : 0)
+    openSwipeId.value = shouldOpen ? accountId : null
+  }
+}
+
+function snapAndSet(id, value) {
+  snapIds.value = new Set([...snapIds.value, id])
+  swipeOffset.value[id] = value
+  setTimeout(() => {
+    snapIds.value.delete(id)
+    snapIds.value = new Set(snapIds.value)
+  }, 200)
+}
 
 function openPaymentDialog(account) {
   paymentAccount.value = account
@@ -330,10 +358,37 @@ function creditUsedPercent(account) {
 
 .ac-list { display: flex; flex-direction: column; gap: 8px; }
 
-.ac-card {
-  border: 0.5px solid #E8E6E0;
+.ac-card-wrap {
+  position: relative;
   border-radius: 12px;
+  border: 0.5px solid #E8E6E0;
+  overflow: hidden;
+}
+
+.ac-card-actions {
+  position: absolute;
+  right: 0;
+  top: 0;
+  bottom: 0;
+  width: 88px;
+  display: flex;
+}
+.ac-card-action {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  i { font-size: 16px; color: #fff; }
+}
+.ac-card-action-edit   { background: #4A7C1F; }
+.ac-card-action-delete { background: #C0392B; }
+
+.ac-card {
   padding: 12px;
+  background: #fff;
+  will-change: transform;
+  &.ac-card-snap { transition: transform 0.18s ease; }
 }
 .ac-card-top {
   display: flex;

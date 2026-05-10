@@ -4,6 +4,13 @@
       <router-view />
     </q-page-container>
 
+    <!-- FAB -->
+    <div class="fab-add" @click="showForm = true">
+      <i class="ti ti-plus" />
+    </div>
+
+    <TransactionForm v-model="showForm" :transaction="null" />
+
     <q-footer class="app-footer">
       <div class="bottom-nav">
         <div
@@ -32,6 +39,7 @@ import { useSettingsStore } from 'src/stores/settings.store'
 import { useRecurringStore } from 'src/stores/recurring_transactions.store'
 import { useProfileStore } from 'src/stores/profile.store'
 import { useTour } from 'src/composables/useTour'
+import TransactionForm from 'components/transactions/TransactionForm.vue'
 
 const route  = useRoute()
 const router = useRouter()
@@ -68,23 +76,22 @@ onMounted(async () => {
 })
 
 const tabs = [
-  { name: 'home',         icon: 'ti-home',           route: '/inicio'   },
-  { name: 'accounts',     icon: 'ti-wallet',          route: '/cuentas'  },
-  { name: 'transactions', icon: 'ti-arrows-exchange', route: '/'         },
-  { name: 'analysis',     icon: 'ti-chart-pie',       route: '/analisis' },
-  { name: 'settings',     icon: 'ti-settings',        route: '/perfil'   },
+  { name: 'home',     icon: 'ti-home',       route: '/'         },
+  { name: 'accounts', icon: 'ti-wallet',      route: '/cuentas'  },
+  { name: 'analysis', icon: 'ti-chart-pie',   route: '/analisis' },
+  { name: 'settings', icon: 'ti-settings',    route: '/perfil'   },
 ]
 
 const routeTabMap = {
-  '/inicio':        'home',
+  '/':              'home',
   '/cuentas':       'accounts',
-  '/':              'transactions',
   '/analisis':      'analysis',
   '/perfil':        'settings',
   '/configuracion': 'settings',
 }
 
-const activeTab = ref(routeTabMap[route.path] ?? 'transactions')
+const activeTab = ref(routeTabMap[route.path] ?? 'home')
+const showForm  = ref(false)
 
 watch(
   () => route.path,
@@ -132,9 +139,29 @@ watch(
   margin-top: 3px;
 }
 
+.fab-add {
+  position: fixed;
+  bottom: calc(env(safe-area-inset-bottom, 10px) + 72px);
+  right: 20px;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: #1a1a18;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  user-select: none;
+  z-index: 1000;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.15);
+
+  i { font-size: 18px; color: #ffffff; }
+}
+
 body.body--dark {
   .app-footer { background: #1d1d1d; border-top-color: #2e2e2e; }
   .nav-icon-on { color: #f0f0f0; }
   .nav-dot { background: #f0f0f0; }
+  .fab-add { background: #f0f0f0; i { color: #1a1a18; } }
 }
 </style>

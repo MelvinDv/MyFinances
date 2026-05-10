@@ -35,51 +35,103 @@
 
     <div class="hm-divider" />
 
-    <!-- Transacciones recientes agrupadas por día -->
-    <template v-if="recentGrouped.length">
-      <template v-for="group in recentGrouped" :key="group.date">
+    <!-- Filter pills -->
+    <div class="hm-pills">
+      <span
+        v-for="opt in typeOptions"
+        :key="opt.value"
+        :class="['hm-pill', { 'hm-pill-on': filterType === opt.value }]"
+        @click="filterType = opt.value"
+      >{{ opt.label }}</span>
+    </div>
+
+    <!-- Transacciones agrupadas por día -->
+    <template v-if="filteredGrouped.length">
+      <template v-for="group in filteredGrouped" :key="group.date">
         <div class="hm-day-label">{{ group.label }}</div>
-        <div v-for="tx in group.transactions" :key="tx.id" class="hm-tx">
-          <div>
-            <div class="hm-tx-name">{{ tx.description || tx.category }}</div>
-            <div class="hm-tx-cat">{{ tx.category }}</div>
+        <div v-for="tx in group.transactions" :key="tx.id" class="hm-tx-wrap">
+
+          <!-- Acciones (reveladas al deslizar) -->
+          <div class="hm-tx-actions">
+            <div class="hm-tx-action hm-tx-action-edit" @click="startEdit(tx)">
+              <i class="ti ti-pencil" />
+            </div>
+            <div class="hm-tx-action hm-tx-action-delete" @click="confirmDelete(tx)">
+              <i class="ti ti-trash" />
+            </div>
           </div>
-          <div :class="['hm-tx-amount', tx.type === 'ingreso' ? 'hm-tx-positive' : '']">
-            {{ tx.type === 'ingreso' ? '+' : '−' }}{{ tx.amount.toLocaleString('es-MX') }}
+
+          <!-- Fila deslizable -->
+          <div
+            v-touch-pan.horizontal.prevent.mouse="(e) => onPan(tx.id, e)"
+            class="hm-tx"
+            :class="{ 'hm-tx-snap': snapIds.has(tx.id) }"
+            :style="{ transform: `translateX(${swipeOffset[tx.id] || 0}px)` }"
+          >
+            <div class="hm-tx-left">
+              <div class="hm-tx-name">{{ tx.description || tx.category }}</div>
+              <div class="hm-tx-cat">
+                {{ tx.category }}
+                <template v-if="tx.account_name">
+                  · {{ tx.destination_account_name
+                    ? `${tx.account_name} → ${tx.destination_account_name}`
+                    : tx.account_name }}
+                </template>
+              </div>
+            </div>
+            <div :class="['hm-tx-amount', tx.type === 'ingreso' ? 'hm-tx-positive' : tx.type === 'transferencia' ? 'hm-tx-transfer' : '']">
+              {{ tx.type === 'ingreso' ? '+' : tx.type === 'transferencia' ? '⇄ ' : '−' }}{{ tx.amount.toLocaleString('es-MX') }}
+            </div>
           </div>
+
         </div>
       </template>
     </template>
     <div v-else class="hm-empty">Sin movimientos este mes</div>
 
-    <!-- Botón agregar -->
-    <div class="hm-add-row">
-      <div class="hm-add-btn" @click="showForm = true">
-        <i class="ti ti-plus" />
-      </div>
-    </div>
+    <!-- Edit form -->
+    <TransactionForm v-model="showForm" :transaction="editingTransaction" @update:model-value="onFormClose" />
 
-    <TransactionForm v-model="showForm" :transaction="null" />
+    <!-- Delete confirm -->
+    <q-dialog v-model="showConfirm">
+      <q-card style="min-width: 300px">
+        <q-card-section>
+          <div class="text-h6">{{ $t('transactions.delete_title') }}</div>
+          <div class="text-body2 q-mt-sm text-grey-7">
+            {{ $t('transactions.delete_confirm') }} <strong>{{ toDelete?.description || toDelete?.category }}</strong>?
+          </div>
+        </q-card-section>
+        <q-card-actions align="right">
+          <q-btn flat :label="$t('common.cancel')" v-close-popup />
+          <q-btn flat :label="$t('common.delete')" color="negative" @click="handleDelete" />
+        </q-card-actions>
+      </q-card>
+    </q-dialog>
+
   </q-page>
 </template>
 
 <script setup>
 import { ref, computed } from 'vue'
+import { useI18n } from 'vue-i18n'
+import { useQuasar } from 'quasar'
 import { useAccountsStore } from 'stores/accounts.store'
 import { useTransactionsStore } from 'stores/transactions.store'
 import { useCurrency } from 'src/composables/useCurrency'
 import TransactionForm from 'components/transactions/TransactionForm.vue'
 
+const { t } = useI18n()
+const $q = useQuasar()
 const { formatCurrency } = useCurrency()
 const accountsStore     = useAccountsStore()
 const transactionsStore = useTransactionsStore()
 
-// ── Account carousel ─────────────────────────────────────────────────────────
+// ── Account carousel ──────────────────────────────────────────────────────────
 
 const activeIdx = ref(0)
 const hidden    = ref(false)
 
-const accounts       = computed(() => accountsStore.accounts)
+const accounts        = computed(() => accountsStore.accounts)
 const selectedAccount = computed(() => accounts.value[activeIdx.value] ?? null)
 
 // ── Month navigation ──────────────────────────────────────────────────────────
@@ -135,22 +187,33 @@ const creditUsedPct = computed(() => {
 
 const displayBalance = computed(() => selectedAccount.value?.balance ?? 0)
 
-// ── Recent transactions (grouped) ─────────────────────────────────────────────
+// ── Filter pills ──────────────────────────────────────────────────────────────
 
-const recentTransactions = computed(() =>
-  transactionsStore.transactions
-    .filter(t => t.date >= periodFrom.value && t.date <= periodTo.value)
-    .sort((a, b) => b.date.localeCompare(a.date))
-    .slice(0, 40)
-)
+const filterType = ref('all')
 
-const recentGrouped = computed(() => {
-  const groups = []
-  const map    = {}
+const typeOptions = computed(() => [
+  { label: t('transactions.filter_all'),   value: 'all'     },
+  { label: t('transactions.type_income'),  value: 'ingreso' },
+  { label: t('transactions.type_expense'), value: 'gasto'   },
+])
+
+// ── Filtered + grouped ────────────────────────────────────────────────────────
+
+const filteredGrouped = computed(() => {
+  const groups  = []
+  const map     = {}
   const today     = new Date().toISOString().split('T')[0]
   const yesterday = new Date(Date.now() - 86400000).toISOString().split('T')[0]
 
-  for (const tx of recentTransactions.value) {
+  const sorted = transactionsStore.transactions
+    .filter(t => {
+      if (t.date < periodFrom.value || t.date > periodTo.value) return false
+      if (filterType.value !== 'all' && t.type !== filterType.value) return false
+      return true
+    })
+    .sort((a, b) => b.date.localeCompare(a.date))
+
+  for (const tx of sorted) {
     let label
     if (tx.date === today)          label = 'hoy'
     else if (tx.date === yesterday) label = 'ayer'
@@ -165,12 +228,78 @@ const recentGrouped = computed(() => {
   return groups
 })
 
-const showForm = ref(false)
+// ── Swipe ─────────────────────────────────────────────────────────────────────
+
+const SNAP_OPEN = -88
+const swipeOffset = ref({})
+const snapIds     = ref(new Set())
+const openSwipeId = ref(null)
+
+function onPan(txId, evt) {
+  // Cierra cualquier otra fila abierta
+  if (openSwipeId.value && openSwipeId.value !== txId) {
+    snapAndSet(openSwipeId.value, 0)
+    openSwipeId.value = null
+  }
+
+  const startOffset = openSwipeId.value === txId ? SNAP_OPEN : 0
+  const raw = startOffset + evt.offset.x
+  swipeOffset.value[txId] = Math.min(0, Math.max(SNAP_OPEN, raw))
+
+  if (evt.isFinal) {
+    const shouldOpen = swipeOffset.value[txId] < SNAP_OPEN / 2
+    snapAndSet(txId, shouldOpen ? SNAP_OPEN : 0)
+    openSwipeId.value = shouldOpen ? txId : null
+  }
+}
+
+function snapAndSet(txId, value) {
+  snapIds.value = new Set([...snapIds.value, txId])
+  swipeOffset.value[txId] = value
+  setTimeout(() => {
+    snapIds.value.delete(txId)
+    snapIds.value = new Set(snapIds.value)
+  }, 200)
+}
+
+// ── Edit / Delete ─────────────────────────────────────────────────────────────
+
+const showForm           = ref(false)
+const editingTransaction = ref(null)
+const showConfirm        = ref(false)
+const toDelete           = ref(null)
+
+function startEdit(tx) {
+  if (tx.installment_plan_id) return
+  snapAndSet(tx.id, 0)
+  openSwipeId.value = null
+  editingTransaction.value = tx
+  showForm.value = true
+}
+
+function onFormClose(val) {
+  showForm.value = val
+  if (!val) editingTransaction.value = null
+}
+
+function confirmDelete(tx) {
+  snapAndSet(tx.id, 0)
+  openSwipeId.value = null
+  toDelete.value = tx
+  showConfirm.value = true
+}
+
+function handleDelete() {
+  transactionsStore.deleteTransaction(toDelete.value.id)
+  showConfirm.value = false
+  $q.notify({ message: t('notify.transaction_deleted'), color: 'negative', icon: 'delete', position: 'bottom', timeout: 2500 })
+  toDelete.value = null
+}
 </script>
 
 <style scoped lang="scss">
 .page-home {
-  padding: 20px 20px 24px;
+  padding: 20px 20px 80px;
   background: #fff;
   min-height: 100vh;
 }
@@ -241,8 +370,8 @@ const showForm = ref(false)
 .hm-bar-row {
   display: flex;
   justify-content: space-between;
+  span { font-size: 11px; color: #C8C6BE; }
 }
-.hm-bar-row span { font-size: 11px; color: #C8C6BE; }
 
 .hm-divider {
   height: 0.5px;
@@ -250,22 +379,91 @@ const showForm = ref(false)
   margin-bottom: 12px;
 }
 
+// ── Filter pills ──────────────────────────────────────────────────────────────
+.hm-pills {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 12px;
+}
+.hm-pill {
+  font-size: 11px;
+  padding: 3px 10px;
+  border-radius: 12px;
+  border: 0.5px solid #E8E6E0;
+  color: #888780;
+  cursor: pointer;
+  user-select: none;
+  transition: all 0.15s;
+}
+.hm-pill-on {
+  background: #1a1a18;
+  color: #fff;
+  border-color: #1a1a18;
+}
+
+// ── Day label ─────────────────────────────────────────────────────────────────
 .hm-day-label {
   font-size: 11px;
   color: #C8C6BE;
-  margin-bottom: 6px;
-  margin-top: 4px;
+  margin-bottom: 4px;
+  margin-top: 8px;
 }
+
+// ── Transaction row ───────────────────────────────────────────────────────────
+.hm-tx-wrap {
+  position: relative;
+  overflow: hidden;
+  border-bottom: 0.5px solid #F1EFE8;
+  &:last-of-type { border-bottom: none; }
+}
+
+.hm-tx-actions {
+  position: absolute;
+  right: 0;
+  top: 0;
+  bottom: 0;
+  width: 88px;
+  display: flex;
+}
+.hm-tx-action {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  i { font-size: 16px; color: #fff; }
+}
+.hm-tx-action-edit   { background: #4A7C1F; }
+.hm-tx-action-delete { background: #C0392B; }
+
 .hm-tx {
   display: flex;
   justify-content: space-between;
-  align-items: flex-start;
-  padding: 5px 0;
+  align-items: center;
+  padding: 8px 0;
+  background: #fff;
+  will-change: transform;
+  &.hm-tx-snap { transition: transform 0.18s ease; }
 }
-.hm-tx-name { font-size: 14px; color: #1a1a18; }
-.hm-tx-cat  { font-size: 11px; color: #C8C6BE; }
-.hm-tx-amount { font-size: 14px; color: #1a1a18; }
+
+.hm-tx-left   { flex: 1; min-width: 0; }
+.hm-tx-name {
+  font-size: 14px;
+  color: #1a1a18;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.hm-tx-cat {
+  font-size: 11px;
+  color: #C8C6BE;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.hm-tx-amount   { font-size: 14px; color: #1a1a18; flex-shrink: 0; padding-left: 8px; }
 .hm-tx-positive { color: #3B6D11; }
+.hm-tx-transfer { color: #888780; }
 
 .hm-empty {
   text-align: center;
@@ -273,21 +471,4 @@ const showForm = ref(false)
   color: #C8C6BE;
   padding: 24px 0;
 }
-
-.hm-add-row {
-  display: flex;
-  justify-content: center;
-  margin-top: 20px;
-}
-.hm-add-btn {
-  width: 32px;
-  height: 32px;
-  border-radius: 50%;
-  border: 0.5px solid #E8E6E0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-}
-.hm-add-btn i { font-size: 16px; color: #1a1a18; }
 </style>
