@@ -55,196 +55,198 @@
 
       <!-- ── PASO 2: categoría + detalles ────────────────────────── -->
       <template v-else>
-        <div class="qs-amount-wrap qs-amount-wrap-sm" @click="step = 1">
-          <div class="qs-amount">${{ amountStr }}</div>
-        </div>
-
-        <!-- Meta pills -->
-        <div class="qs-meta-row">
-          <!-- Cuenta (no-transferencia) -->
-          <div v-if="!isTransfer" class="qs-meta-pill qs-meta-pill-select">
-            <i class="ti ti-credit-card qs-meta-icon" />
-            <q-select
-              v-model="form.account"
-              :options="accountOptions"
-              option-label="label"
-              borderless dense hide-bottom-space
-              class="qs-meta-select"
-            />
+        <div class="qs-scroll-body">
+          <div class="qs-amount-wrap qs-amount-wrap-sm" @click="step = 1">
+            <div class="qs-amount">${{ amountStr }}</div>
           </div>
-          <!-- Cuentas (transferencia) -->
-          <template v-else>
-            <div class="qs-meta-pill qs-meta-pill-select">
-              <i class="ti ti-arrow-right qs-meta-icon" />
+
+          <!-- Meta pills -->
+          <div class="qs-meta-row">
+            <!-- Cuenta (no-transferencia) -->
+            <div v-if="!isTransfer" class="qs-meta-pill qs-meta-pill-select">
+              <i class="ti ti-credit-card qs-meta-icon" />
               <q-select
-                v-model="form.fromAccount"
+                v-model="form.account"
                 :options="accountOptions"
                 option-label="label"
                 borderless dense hide-bottom-space
                 class="qs-meta-select"
               />
             </div>
-            <div class="qs-meta-pill qs-meta-pill-select">
-              <i class="ti ti-arrow-right qs-meta-icon" />
-              <q-select
-                v-model="form.toAccount"
-                :options="toAccountOptions"
-                option-label="label"
-                borderless dense hide-bottom-space
-                class="qs-meta-select"
+            <!-- Cuentas (transferencia) -->
+            <template v-else>
+              <div class="qs-meta-pill qs-meta-pill-select">
+                <i class="ti ti-arrow-right qs-meta-icon" />
+                <q-select
+                  v-model="form.fromAccount"
+                  :options="accountOptions"
+                  option-label="label"
+                  borderless dense hide-bottom-space
+                  class="qs-meta-select"
+                />
+              </div>
+              <div class="qs-meta-pill qs-meta-pill-select">
+                <i class="ti ti-arrow-right qs-meta-icon" />
+                <q-select
+                  v-model="form.toAccount"
+                  :options="toAccountOptions"
+                  option-label="label"
+                  borderless dense hide-bottom-space
+                  class="qs-meta-select"
+                />
+              </div>
+            </template>
+            <!-- Fecha -->
+            <div class="qs-meta-pill qs-meta-pill-date">
+              <i class="ti ti-calendar qs-meta-icon" />
+              <span class="qs-meta-text">{{ dateLabel }}</span>
+              <q-popup-proxy cover transition-show="scale" transition-hide="scale">
+                <q-date v-model="form.date" mask="YYYY-MM-DD" minimal>
+                  <div class="row justify-end"><q-btn v-close-popup label="OK" color="dark" flat /></div>
+                </q-date>
+              </q-popup-proxy>
+            </div>
+          </div>
+
+          <!-- Category grid (hidden for transfers) -->
+          <div v-if="!isTransfer" class="qs-cat-grid">
+            <div
+              v-for="cat in settingsStore.categories"
+              :key="cat.id"
+              :class="['qs-cat-item', { 'qs-cat-selected': form.category === cat.name }]"
+              @click="form.category = cat.name"
+            >
+              <div class="qs-cat-icon" :style="{ background: cat.color + '22' }">
+                <q-icon :name="cat.icon" size="16px" :style="{ color: cat.color }" />
+              </div>
+              <span class="qs-cat-name">{{ cat.name }}</span>
+            </div>
+          </div>
+
+          <!-- Expand detalles -->
+          <div class="qs-expand-row" @click="showDetails = !showDetails">
+            <span class="qs-expand-label">{{ showDetails ? 'Ocultar detalles' : 'Más detalles' }}</span>
+            <i :class="['ti', showDetails ? 'ti-chevron-up' : 'ti-chevron-down']" style="font-size:13px;color:#C8C6BE" />
+          </div>
+
+          <!-- Optional details -->
+          <div v-if="showDetails" class="qs-details">
+
+            <!-- Descripción -->
+            <div class="qs-field-row">
+              <i class="ti ti-tag qs-field-icon" />
+              <input
+                v-model="form.description"
+                :placeholder="$t('transaction_form.description_placeholder')"
+                class="qs-field-input"
               />
             </div>
-          </template>
-          <!-- Fecha -->
-          <div class="qs-meta-pill qs-meta-pill-date">
-            <i class="ti ti-calendar qs-meta-icon" />
-            <span class="qs-meta-text">{{ dateLabel }}</span>
-            <q-popup-proxy cover transition-show="scale" transition-hide="scale">
-              <q-date v-model="form.date" mask="YYYY-MM-DD" minimal>
-                <div class="row justify-end"><q-btn v-close-popup label="OK" color="dark" flat /></div>
-              </q-date>
-            </q-popup-proxy>
-          </div>
-        </div>
 
-        <!-- Category grid (hidden for transfers) -->
-        <div v-if="!isTransfer" class="qs-cat-grid">
-          <div
-            v-for="cat in settingsStore.categories"
-            :key="cat.id"
-            :class="['qs-cat-item', { 'qs-cat-selected': form.category === cat.name }]"
-            @click="form.category = cat.name"
-          >
-            <div class="qs-cat-icon" :style="{ background: cat.color + '22' }">
-              <q-icon :name="cat.icon" size="16px" :style="{ color: cat.color }" />
-            </div>
-            <span class="qs-cat-name">{{ cat.name }}</span>
-          </div>
-        </div>
-
-        <!-- Expand detalles -->
-        <div class="qs-expand-row" @click="showDetails = !showDetails">
-          <span class="qs-expand-label">{{ showDetails ? 'Ocultar detalles' : 'Más detalles' }}</span>
-          <i :class="['ti', showDetails ? 'ti-chevron-up' : 'ti-chevron-down']" style="font-size:13px;color:#C8C6BE" />
-        </div>
-
-        <!-- Optional details -->
-        <div v-if="showDetails" class="qs-details">
-
-          <!-- Descripción -->
-          <div class="qs-field-row">
-            <i class="ti ti-tag qs-field-icon" />
-            <input
-              v-model="form.description"
-              :placeholder="$t('transaction_form.description_placeholder')"
-              class="qs-field-input"
-            />
-          </div>
-
-          <!-- Recurrente toggle -->
-          <div
-            v-if="form.type === 'gasto' && !isEditMode"
-            class="qs-toggle-row"
-          >
-            <div class="qs-toggle-label">
-              <i class="ti ti-repeat qs-field-icon" />
-              <span>{{ $t('recurring.toggle_label') }}</span>
-            </div>
+            <!-- Recurrente toggle -->
             <div
-              :class="['qs-tog', { 'qs-tog-off': !form.recurring }]"
-              @click="form.recurring = !form.recurring"
+              v-if="form.type === 'gasto' && !isEditMode"
+              class="qs-toggle-row"
             >
-              <div class="qs-tog-knob" />
+              <div class="qs-toggle-label">
+                <i class="ti ti-repeat qs-field-icon" />
+                <span>{{ $t('recurring.toggle_label') }}</span>
+              </div>
+              <div
+                :class="['qs-tog', { 'qs-tog-off': !form.recurring }]"
+                @click="form.recurring = !form.recurring"
+              >
+                <div class="qs-tog-knob" />
+              </div>
             </div>
-          </div>
 
-          <!-- MSI toggle -->
-          <div
-            v-if="isCredit && form.type === 'gasto' && !form.recurring && !isEditMode"
-            class="qs-toggle-row"
-          >
-            <div class="qs-toggle-label">
-              <i class="ti ti-credit-card qs-field-icon" />
-              <span>{{ $t('installments.toggle_label') }}</span>
-            </div>
+            <!-- MSI toggle -->
             <div
-              :class="['qs-tog', { 'qs-tog-off': !form.installment.enabled }]"
-              @click="form.installment.enabled = !form.installment.enabled"
+              v-if="isCredit && form.type === 'gasto' && !form.recurring && !isEditMode"
+              class="qs-toggle-row"
             >
-              <div class="qs-tog-knob" />
-            </div>
-          </div>
-
-          <!-- Detalle MSI -->
-          <div v-if="form.installment.enabled && isCredit" class="qs-installment">
-            <div class="qs-inst-label">{{ $t('installments.months_label') }}</div>
-            <div class="qs-months-grid">
-              <button
-                v-for="m in monthOptions"
-                :key="m"
-                :class="['qs-month-btn', { 'qs-month-on': form.installment.months === m }]"
-                @click="form.installment.months = m"
-              >{{ m }}</button>
-            </div>
-
-            <div class="qs-type-row q-mt-xs">
+              <div class="qs-toggle-label">
+                <i class="ti ti-credit-card qs-field-icon" />
+                <span>{{ $t('installments.toggle_label') }}</span>
+              </div>
               <div
-                :class="['qs-type-btn', { 'qs-type-on': form.installment.type === 'msi' }]"
-                @click="form.installment.type = 'msi'"
-              >{{ $t('installments.type_msi') }}</div>
-              <div
-                :class="['qs-type-btn', { 'qs-type-on': form.installment.type === 'interes' }]"
-                @click="form.installment.type = 'interes'"
-              >{{ $t('installments.type_interest') }}</div>
+                :class="['qs-tog', { 'qs-tog-off': !form.installment.enabled }]"
+                @click="form.installment.enabled = !form.installment.enabled"
+              >
+                <div class="qs-tog-knob" />
+              </div>
             </div>
 
-            <template v-if="form.installment.type === 'interes'">
+            <!-- Detalle MSI -->
+            <div v-if="form.installment.enabled && isCredit" class="qs-installment">
+              <div class="qs-inst-label">{{ $t('installments.months_label') }}</div>
+              <div class="qs-months-grid">
+                <button
+                  v-for="m in monthOptions"
+                  :key="m"
+                  :class="['qs-month-btn', { 'qs-month-on': form.installment.months === m }]"
+                  @click="form.installment.months = m"
+                >{{ m }}</button>
+              </div>
+
               <div class="qs-type-row q-mt-xs">
                 <div
-                  :class="['qs-type-btn', { 'qs-type-on': form.installment.calcMode === 'mensual' }]"
-                  @click="form.installment.calcMode = 'mensual'"
-                >{{ $t('installments.calc_mode_monthly') }}</div>
+                  :class="['qs-type-btn', { 'qs-type-on': form.installment.type === 'msi' }]"
+                  @click="form.installment.type = 'msi'"
+                >{{ $t('installments.type_msi') }}</div>
                 <div
-                  :class="['qs-type-btn', { 'qs-type-on': form.installment.calcMode === 'tasa' }]"
-                  @click="form.installment.calcMode = 'tasa'"
-                >{{ $t('installments.calc_mode_rate') }}</div>
+                  :class="['qs-type-btn', { 'qs-type-on': form.installment.type === 'interes' }]"
+                  @click="form.installment.type = 'interes'"
+                >{{ $t('installments.type_interest') }}</div>
               </div>
-              <q-input
-                v-if="form.installment.calcMode === 'mensual'"
-                v-model.number="form.installment.monthlyPayment"
-                type="number" outlined dense prefix="$"
-                :placeholder="$t('installments.monthly_payment_placeholder')"
-                class="q-mt-xs" hide-bottom-space
-              />
-              <q-input
-                v-else
-                v-model.number="form.installment.annualRate"
-                type="number" outlined dense suffix="%"
-                :placeholder="$t('installments.annual_rate_placeholder')"
-                class="q-mt-xs" hide-bottom-space
-              />
-            </template>
 
-            <div v-if="installmentSummary" class="qs-inst-summary">
-              <div class="qs-inst-row">
-                <span>{{ $t('installments.summary_monthly') }}</span>
-                <span>{{ formatCurrency(installmentSummary.monthly) }}</span>
-              </div>
-              <div class="qs-inst-row">
-                <span>{{ $t('installments.summary_total') }}</span>
-                <strong>{{ formatCurrency(installmentSummary.total) }}</strong>
-              </div>
-              <div class="qs-inst-row">
-                <span>{{ $t('installments.summary_interest') }}</span>
-                <span :class="installmentSummary.interest > 0 ? 'text-negative' : 'text-positive'">
-                  {{ installmentSummary.interest > 0
-                    ? '+' + formatCurrency(installmentSummary.interest)
-                    : $t('installments.summary_no_interest') }}
-                </span>
+              <template v-if="form.installment.type === 'interes'">
+                <div class="qs-type-row q-mt-xs">
+                  <div
+                    :class="['qs-type-btn', { 'qs-type-on': form.installment.calcMode === 'mensual' }]"
+                    @click="form.installment.calcMode = 'mensual'"
+                  >{{ $t('installments.calc_mode_monthly') }}</div>
+                  <div
+                    :class="['qs-type-btn', { 'qs-type-on': form.installment.calcMode === 'tasa' }]"
+                    @click="form.installment.calcMode = 'tasa'"
+                  >{{ $t('installments.calc_mode_rate') }}</div>
+                </div>
+                <q-input
+                  v-if="form.installment.calcMode === 'mensual'"
+                  v-model.number="form.installment.monthlyPayment"
+                  type="number" outlined dense prefix="$"
+                  :placeholder="$t('installments.monthly_payment_placeholder')"
+                  class="q-mt-xs" hide-bottom-space
+                />
+                <q-input
+                  v-else
+                  v-model.number="form.installment.annualRate"
+                  type="number" outlined dense suffix="%"
+                  :placeholder="$t('installments.annual_rate_placeholder')"
+                  class="q-mt-xs" hide-bottom-space
+                />
+              </template>
+
+              <div v-if="installmentSummary" class="qs-inst-summary">
+                <div class="qs-inst-row">
+                  <span>{{ $t('installments.summary_monthly') }}</span>
+                  <span>{{ formatCurrency(installmentSummary.monthly) }}</span>
+                </div>
+                <div class="qs-inst-row">
+                  <span>{{ $t('installments.summary_total') }}</span>
+                  <strong>{{ formatCurrency(installmentSummary.total) }}</strong>
+                </div>
+                <div class="qs-inst-row">
+                  <span>{{ $t('installments.summary_interest') }}</span>
+                  <span :class="installmentSummary.interest > 0 ? 'text-negative' : 'text-positive'">
+                    {{ installmentSummary.interest > 0
+                      ? '+' + formatCurrency(installmentSummary.interest)
+                      : $t('installments.summary_no_interest') }}
+                  </span>
+                </div>
               </div>
             </div>
-          </div>
 
+          </div>
         </div>
 
         <!-- Confirm button -->
@@ -537,6 +539,16 @@ async function handleUpdate(amount) {
   border-radius: 20px 20px 0 0 !important;
   overflow: hidden;
   padding-bottom: env(safe-area-inset-bottom, 8px);
+  max-height: 92dvh;
+  display: flex;
+  flex-direction: column;
+}
+
+.qs-scroll-body {
+  flex: 1;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
 }
 
 .qs-handle {

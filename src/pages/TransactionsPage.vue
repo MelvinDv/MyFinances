@@ -77,33 +77,41 @@
     <template v-if="groupedFiltered.length">
       <template v-for="group in groupedFiltered" :key="group.date">
         <div class="tx-day-label">{{ group.label }}</div>
-        <div
+        <q-slide-item
           v-for="tx in group.transactions"
           :key="tx.id"
-          class="tx-row"
-          @click="startEdit(tx)"
+          class="tx-slide"
+          right-color="negative"
+          :left-color="tx.installment_plan_id ? '' : 'grey-2'"
+          @right="({ reset }) => onSlideDelete(tx, reset)"
+          @left="({ reset }) => onSlideEdit(tx, reset)"
         >
-          <div class="tx-row-left">
-            <div class="tx-row-name">{{ tx.description || tx.category }}</div>
-            <div class="tx-row-sub">
-              {{ tx.category }}
-              <template v-if="tx.account_name"> · {{ tx.destination_account_name
-                ? `${tx.account_name} → ${tx.destination_account_name}`
-                : tx.account_name }}</template>
+          <template v-if="!tx.installment_plan_id" #left>
+            <q-icon name="edit" color="grey-7" />
+          </template>
+          <template #right>
+            <q-icon name="delete" />
+          </template>
+
+          <div class="tx-row" @click="startEdit(tx)">
+            <div class="tx-row-left">
+              <div class="tx-row-name">{{ tx.description || tx.category }}</div>
+              <div class="tx-row-sub">
+                {{ tx.category }}
+                <template v-if="tx.account_name"> · {{ tx.destination_account_name
+                  ? `${tx.account_name} → ${tx.destination_account_name}`
+                  : tx.account_name }}</template>
+              </div>
+            </div>
+            <div class="tx-row-right">
+              <div
+                :class="['tx-row-amount', tx.type === 'ingreso' ? 'tx-positive' : tx.type === 'transferencia' ? 'tx-transfer' : '']"
+              >
+                {{ tx.type === 'ingreso' ? '+' : tx.type === 'transferencia' ? '⇄ ' : '−' }}{{ tx.amount.toLocaleString('es-MX') }}
+              </div>
             </div>
           </div>
-          <div class="tx-row-right">
-            <div
-              :class="['tx-row-amount', tx.type === 'ingreso' ? 'tx-positive' : tx.type === 'transferencia' ? 'tx-transfer' : '']"
-            >
-              {{ tx.type === 'ingreso' ? '+' : tx.type === 'transferencia' ? '⇄ ' : '−' }}{{ tx.amount.toLocaleString('es-MX') }}
-            </div>
-            <q-btn
-              flat round dense icon="delete" size="9px" color="grey-4"
-              @click.stop="confirmDelete(tx)"
-            />
-          </div>
-        </div>
+        </q-slide-item>
       </template>
     </template>
     <div v-else class="tx-empty">{{ $t('transactions.no_data') }}</div>
@@ -278,6 +286,16 @@ const dateRangeLabel = computed(() => {
   return ''
 })
 
+function onSlideEdit(tx, reset) {
+  reset()
+  startEdit(tx)
+}
+
+function onSlideDelete(tx, reset) {
+  reset()
+  confirmDelete(tx)
+}
+
 function confirmDelete(transaction) {
   toDelete.value = transaction
   showConfirm.value = true
@@ -337,15 +355,19 @@ function handleDelete() {
   margin-top: 8px;
 }
 
+.tx-slide {
+  border-bottom: 0.5px solid #F1EFE8;
+  &:last-of-type { border-bottom: none; }
+}
+
 .tx-row {
   display: flex;
   justify-content: space-between;
   align-items: center;
   padding: 6px 0;
-  border-bottom: 0.5px solid #F1EFE8;
   cursor: pointer;
+  background: #fff;
 }
-.tx-row:last-of-type { border-bottom: none; }
 
 .tx-row-left { flex: 1; min-width: 0; }
 .tx-row-name {
@@ -366,7 +388,6 @@ function handleDelete() {
 .tx-row-right {
   display: flex;
   align-items: center;
-  gap: 2px;
   flex-shrink: 0;
 }
 .tx-row-amount { font-size: 14px; color: #1a1a18; }
