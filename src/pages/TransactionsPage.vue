@@ -77,41 +77,43 @@
     <template v-if="groupedFiltered.length">
       <template v-for="group in groupedFiltered" :key="group.date">
         <div class="tx-day-label">{{ group.label }}</div>
-        <q-slide-item
-          v-for="tx in group.transactions"
-          :key="tx.id"
-          class="tx-slide"
-          right-color="negative"
-          :left-color="tx.installment_plan_id ? '' : 'grey-2'"
-          @right="({ reset }) => onSlideDelete(tx, reset)"
-          @left="({ reset }) => onSlideEdit(tx, reset)"
-        >
-          <template v-if="!tx.installment_plan_id" #left>
-            <q-icon name="edit" color="grey-7" />
-          </template>
-          <template #right>
-            <q-icon name="delete" />
-          </template>
+        <q-list class="tx-group-list">
+          <q-slide-item
+            v-for="tx in group.transactions"
+            :key="tx.id"
+            class="tx-slide"
+            right-color="negative"
+            left-color="grey-3"
+            @right="({ reset }) => onSlideDelete(tx, reset)"
+            @left="({ reset }) => onSlideEdit(tx, reset)"
+          >
+            <template #left>
+              <q-icon name="edit" color="grey-8" />
+            </template>
+            <template #right>
+              <q-icon name="delete" />
+            </template>
 
-          <div class="tx-row" @click="startEdit(tx)">
-            <div class="tx-row-left">
-              <div class="tx-row-name">{{ tx.description || tx.category }}</div>
-              <div class="tx-row-sub">
-                {{ tx.category }}
-                <template v-if="tx.account_name"> · {{ tx.destination_account_name
-                  ? `${tx.account_name} → ${tx.destination_account_name}`
-                  : tx.account_name }}</template>
-              </div>
-            </div>
-            <div class="tx-row-right">
-              <div
-                :class="['tx-row-amount', tx.type === 'ingreso' ? 'tx-positive' : tx.type === 'transferencia' ? 'tx-transfer' : '']"
-              >
-                {{ tx.type === 'ingreso' ? '+' : tx.type === 'transferencia' ? '⇄ ' : '−' }}{{ tx.amount.toLocaleString('es-MX') }}
-              </div>
-            </div>
-          </div>
-        </q-slide-item>
+            <q-item class="tx-row" clickable @click="startEdit(tx)">
+              <q-item-section>
+                <div class="tx-row-name">{{ tx.description || tx.category }}</div>
+                <div class="tx-row-sub">
+                  {{ tx.category }}
+                  <template v-if="tx.account_name"> · {{ tx.destination_account_name
+                    ? `${tx.account_name} → ${tx.destination_account_name}`
+                    : tx.account_name }}</template>
+                </div>
+              </q-item-section>
+              <q-item-section side>
+                <div
+                  :class="['tx-row-amount', tx.type === 'ingreso' ? 'tx-positive' : tx.type === 'transferencia' ? 'tx-transfer' : '']"
+                >
+                  {{ tx.type === 'ingreso' ? '+' : tx.type === 'transferencia' ? '⇄ ' : '−' }}{{ tx.amount.toLocaleString('es-MX') }}
+                </div>
+              </q-item-section>
+            </q-item>
+          </q-slide-item>
+        </q-list>
       </template>
     </template>
     <div v-else class="tx-empty">{{ $t('transactions.no_data') }}</div>
@@ -355,21 +357,24 @@ function handleDelete() {
   margin-top: 8px;
 }
 
+.tx-group-list {
+  padding: 0;
+  background: transparent;
+}
+
 .tx-slide {
   border-bottom: 0.5px solid #F1EFE8;
   &:last-of-type { border-bottom: none; }
 }
 
 .tx-row {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
   padding: 6px 0;
-  cursor: pointer;
+  min-height: unset;
   background: #fff;
+
+  :deep(.q-item__section--side) { padding-left: 8px; }
 }
 
-.tx-row-left { flex: 1; min-width: 0; }
 .tx-row-name {
   font-size: 14px;
   color: #1a1a18;
@@ -385,11 +390,6 @@ function handleDelete() {
   text-overflow: ellipsis;
 }
 
-.tx-row-right {
-  display: flex;
-  align-items: center;
-  flex-shrink: 0;
-}
 .tx-row-amount { font-size: 14px; color: #1a1a18; }
 .tx-positive   { color: #3B6D11; }
 .tx-transfer   { color: #888780; }
