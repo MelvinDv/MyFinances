@@ -49,41 +49,35 @@
     <template v-if="filteredGrouped.length">
       <template v-for="group in filteredGrouped" :key="group.date">
         <div class="hm-day-label">{{ group.label }}</div>
-        <div v-for="tx in group.transactions" :key="tx.id" class="hm-tx-wrap">
-
-          <!-- Acciones (reveladas al deslizar) -->
-          <div class="hm-tx-actions">
-            <div class="hm-tx-action hm-tx-action-edit" @click="startEdit(tx)">
-              <i class="ti ti-pencil" />
-            </div>
-            <div class="hm-tx-action hm-tx-action-delete" @click="confirmDelete(tx)">
-              <i class="ti ti-trash" />
+        <div v-for="tx in group.transactions" :key="tx.id" class="hm-tx">
+          <div class="hm-tx-left">
+            <div class="hm-tx-name">{{ tx.description || tx.category }}</div>
+            <div class="hm-tx-cat">
+              {{ tx.category }}
+              <template v-if="tx.account_name">
+                · {{ tx.destination_account_name
+                  ? `${tx.account_name} → ${tx.destination_account_name}`
+                  : tx.account_name }}
+              </template>
             </div>
           </div>
-
-          <!-- Fila deslizable -->
-          <div
-            v-touch-pan.horizontal.prevent.mouse="(e) => onPan(tx.id, e)"
-            class="hm-tx"
-            :class="{ 'hm-tx-snap': snapIds.has(tx.id) }"
-            :style="{ transform: `translateX(${swipeOffset[tx.id] || 0}px)` }"
-          >
-            <div class="hm-tx-left">
-              <div class="hm-tx-name">{{ tx.description || tx.category }}</div>
-              <div class="hm-tx-cat">
-                {{ tx.category }}
-                <template v-if="tx.account_name">
-                  · {{ tx.destination_account_name
-                    ? `${tx.account_name} → ${tx.destination_account_name}`
-                    : tx.account_name }}
-                </template>
-              </div>
-            </div>
+          <div class="hm-tx-right">
             <div :class="['hm-tx-amount', tx.type === 'ingreso' ? 'hm-tx-positive' : tx.type === 'transferencia' ? 'hm-tx-transfer' : '']">
               {{ tx.type === 'ingreso' ? '+' : tx.type === 'transferencia' ? '⇄ ' : '−' }}{{ tx.amount.toLocaleString('es-MX') }}
             </div>
+            <q-btn flat round dense icon="more_vert" size="9px" color="grey-4">
+              <q-menu anchor="bottom right" self="top right" class="hm-menu">
+                <q-item v-if="!tx.installment_plan_id" v-close-popup clickable @click="startEdit(tx)">
+                  <q-item-section side><i class="ti ti-edit hm-menu-icon" /></q-item-section>
+                  <q-item-section>Editar</q-item-section>
+                </q-item>
+                <q-item v-close-popup clickable class="hm-menu-delete" @click="confirmDelete(tx)">
+                  <q-item-section side><i class="ti ti-trash hm-menu-icon" /></q-item-section>
+                  <q-item-section>Eliminar</q-item-section>
+                </q-item>
+              </q-menu>
+            </q-btn>
           </div>
-
         </div>
       </template>
     </template>
@@ -228,40 +222,6 @@ const filteredGrouped = computed(() => {
   return groups
 })
 
-// ── Swipe ─────────────────────────────────────────────────────────────────────
-
-const SNAP_OPEN = -88
-const swipeOffset = ref({})
-const snapIds     = ref(new Set())
-const openSwipeId = ref(null)
-
-function onPan(txId, evt) {
-  // Cierra cualquier otra fila abierta
-  if (openSwipeId.value && openSwipeId.value !== txId) {
-    snapAndSet(openSwipeId.value, 0)
-    openSwipeId.value = null
-  }
-
-  const startOffset = openSwipeId.value === txId ? SNAP_OPEN : 0
-  const raw = startOffset + evt.offset.x
-  swipeOffset.value[txId] = Math.min(0, Math.max(SNAP_OPEN, raw))
-
-  if (evt.isFinal) {
-    const shouldOpen = swipeOffset.value[txId] < SNAP_OPEN / 2
-    snapAndSet(txId, shouldOpen ? SNAP_OPEN : 0)
-    openSwipeId.value = shouldOpen ? txId : null
-  }
-}
-
-function snapAndSet(txId, value) {
-  snapIds.value = new Set([...snapIds.value, txId])
-  swipeOffset.value[txId] = value
-  setTimeout(() => {
-    snapIds.value.delete(txId)
-    snapIds.value = new Set(snapIds.value)
-  }, 200)
-}
-
 // ── Edit / Delete ─────────────────────────────────────────────────────────────
 
 const showForm           = ref(false)
@@ -271,8 +231,6 @@ const toDelete           = ref(null)
 
 function startEdit(tx) {
   if (tx.installment_plan_id) return
-  snapAndSet(tx.id, 0)
-  openSwipeId.value = null
   editingTransaction.value = tx
   showForm.value = true
 }
@@ -283,8 +241,6 @@ function onFormClose(val) {
 }
 
 function confirmDelete(tx) {
-  snapAndSet(tx.id, 0)
-  openSwipeId.value = null
   toDelete.value = tx
   showConfirm.value = true
 }
@@ -410,43 +366,16 @@ function handleDelete() {
 }
 
 // ── Transaction row ───────────────────────────────────────────────────────────
-.hm-tx-wrap {
-  position: relative;
-  overflow: hidden;
-  border-bottom: 0.5px solid #F1EFE8;
-  &:last-of-type { border-bottom: none; }
-}
-
-.hm-tx-actions {
-  position: absolute;
-  right: 0;
-  top: 0;
-  bottom: 0;
-  width: 88px;
-  display: flex;
-}
-.hm-tx-action {
-  flex: 1;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  i { font-size: 16px; color: #fff; }
-}
-.hm-tx-action-edit   { background: #4A7C1F; }
-.hm-tx-action-delete { background: #C0392B; }
-
 .hm-tx {
   display: flex;
   justify-content: space-between;
   align-items: center;
   padding: 8px 0;
-  background: #fff;
-  will-change: transform;
-  &.hm-tx-snap { transition: transform 0.18s ease; }
+  border-bottom: 0.5px solid #F1EFE8;
+  &:last-of-type { border-bottom: none; }
 }
 
-.hm-tx-left   { flex: 1; min-width: 0; }
+.hm-tx-left { flex: 1; min-width: 0; }
 .hm-tx-name {
   font-size: 14px;
   color: #1a1a18;
@@ -461,9 +390,34 @@ function handleDelete() {
   overflow: hidden;
   text-overflow: ellipsis;
 }
-.hm-tx-amount   { font-size: 14px; color: #1a1a18; flex-shrink: 0; padding-left: 8px; }
+
+.hm-tx-right {
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+}
+.hm-tx-amount   { font-size: 14px; color: #1a1a18; }
 .hm-tx-positive { color: #3B6D11; }
 .hm-tx-transfer { color: #888780; }
+
+.hm-menu {
+  min-width: 130px;
+  border-radius: 10px !important;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.08) !important;
+
+  .q-item {
+    font-size: 13px;
+    color: #1a1a18;
+    min-height: 38px;
+    padding: 0 14px 0 10px;
+  }
+  .q-item__section--side { min-width: unset; padding-right: 8px; }
+}
+.hm-menu-icon { font-size: 14px; color: #888780; }
+.hm-menu-delete {
+  color: #C0392B;
+  .hm-menu-icon { color: #C0392B; }
+}
 
 .hm-empty {
   text-align: center;

@@ -80,9 +80,7 @@
         <div
           v-for="tx in group.transactions"
           :key="tx.id"
-          v-touch-hold.mouse="() => openActions(tx)"
           class="tx-row"
-          @click="startEdit(tx)"
         >
           <div class="tx-row-left">
             <div class="tx-row-name">{{ tx.description || tx.category }}</div>
@@ -99,6 +97,22 @@
             >
               {{ tx.type === 'ingreso' ? '+' : tx.type === 'transferencia' ? '⇄ ' : '−' }}{{ tx.amount.toLocaleString('es-MX') }}
             </div>
+            <q-btn flat round dense icon="more_vert" size="9px" color="grey-4" @click.stop="openActions(tx)">
+              <q-menu anchor="bottom right" self="top right" class="tx-menu">
+                <q-item
+                  v-if="!tx.installment_plan_id"
+                  v-close-popup clickable
+                  @click="startEdit(tx)"
+                >
+                  <q-item-section side><i class="ti ti-edit tx-menu-icon" /></q-item-section>
+                  <q-item-section>Editar</q-item-section>
+                </q-item>
+                <q-item v-close-popup clickable class="tx-menu-delete" @click="confirmDelete(tx)">
+                  <q-item-section side><i class="ti ti-trash tx-menu-icon" /></q-item-section>
+                  <q-item-section>Eliminar</q-item-section>
+                </q-item>
+              </q-menu>
+            </q-btn>
           </div>
         </div>
       </template>
@@ -107,27 +121,6 @@
 
     <!-- Dialogs -->
     <TransactionForm v-model="showForm" :transaction="editingTransaction" @update:model-value="onFormClose" />
-
-    <!-- Action sheet (long press) -->
-    <q-bottom-sheet v-model="showActions" class="tx-action-sheet">
-      <div class="tx-action-handle" />
-      <div v-if="actionTarget" class="tx-action-label">
-        {{ actionTarget.description || actionTarget.category }}
-      </div>
-      <div
-        v-if="!actionTarget?.installment_plan_id"
-        class="tx-action-row"
-        @click="onActionEdit"
-      >
-        <i class="ti ti-edit tx-action-icon" />
-        <span>Editar</span>
-      </div>
-      <div class="tx-action-row tx-action-delete" @click="onActionDelete">
-        <i class="ti ti-trash tx-action-icon" />
-        <span>Eliminar</span>
-      </div>
-      <div style="height: env(safe-area-inset-bottom, 8px)" />
-    </q-bottom-sheet>
 
     <q-dialog v-model="showConfirm">
       <q-card style="min-width: 300px">
@@ -179,9 +172,7 @@ onMounted(async () => {
 
 const showForm           = ref(false)
 const showConfirm        = ref(false)
-const showActions        = ref(false)
 const toDelete           = ref(null)
-const actionTarget       = ref(null)
 const editingTransaction = ref(null)
 
 function startEdit(transaction) {
@@ -298,21 +289,6 @@ const dateRangeLabel = computed(() => {
   return ''
 })
 
-function openActions(tx) {
-  actionTarget.value = tx
-  showActions.value = true
-}
-
-function onActionEdit() {
-  showActions.value = false
-  startEdit(actionTarget.value)
-}
-
-function onActionDelete() {
-  showActions.value = false
-  confirmDelete(actionTarget.value)
-}
-
 function confirmDelete(transaction) {
   toDelete.value = transaction
   showConfirm.value = true
@@ -415,35 +391,23 @@ function handleDelete() {
   padding: 32px 0;
 }
 
-// ── Action sheet ──────────────────────────────────────────────────────────────
-.tx-action-sheet {
-  :deep(.q-bottom-sheet) { border-radius: 20px 20px 0 0; }
+// ── Row menu ──────────────────────────────────────────────────────────────────
+.tx-menu {
+  min-width: 130px;
+  border-radius: 10px !important;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.08) !important;
+
+  .q-item {
+    font-size: 13px;
+    color: #1a1a18;
+    min-height: 38px;
+    padding: 0 14px 0 10px;
+  }
+  .q-item__section--side { min-width: unset; padding-right: 8px; }
 }
-.tx-action-handle {
-  width: 32px; height: 3px;
-  background: #E8E6E0; border-radius: 2px;
-  margin: 10px auto 0;
+.tx-menu-icon { font-size: 14px; color: #888780; }
+.tx-menu-delete {
+  color: #C0392B;
+  .tx-menu-icon { color: #C0392B; }
 }
-.tx-action-label {
-  font-size: 12px;
-  color: #C8C6BE;
-  text-align: center;
-  padding: 10px 20px 4px;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-.tx-action-row {
-  display: flex;
-  align-items: center;
-  gap: 14px;
-  padding: 16px 24px;
-  font-size: 15px;
-  color: #1a1a18;
-  cursor: pointer;
-  user-select: none;
-  &:active { background: #F8F7F4; }
-}
-.tx-action-icon { font-size: 18px; color: #888780; }
-.tx-action-delete { color: #C0392B; .tx-action-icon { color: #C0392B; } }
 </style>
