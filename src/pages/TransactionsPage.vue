@@ -77,49 +77,57 @@
     <template v-if="groupedFiltered.length">
       <template v-for="group in groupedFiltered" :key="group.date">
         <div class="tx-day-label">{{ group.label }}</div>
-        <q-list class="tx-group-list">
-          <q-slide-item
-            v-for="tx in group.transactions"
-            :key="tx.id"
-            class="tx-slide"
-            right-color="negative"
-            left-color="grey-3"
-            @right="({ reset }) => onSlideDelete(tx, reset)"
-            @left="({ reset }) => onSlideEdit(tx, reset)"
-          >
-            <template #left>
-              <q-icon name="edit" color="grey-8" />
-            </template>
-            <template #right>
-              <q-icon name="delete" />
-            </template>
-
-            <q-item class="tx-row" clickable @click="startEdit(tx)">
-              <q-item-section>
-                <div class="tx-row-name">{{ tx.description || tx.category }}</div>
-                <div class="tx-row-sub">
-                  {{ tx.category }}
-                  <template v-if="tx.account_name"> · {{ tx.destination_account_name
-                    ? `${tx.account_name} → ${tx.destination_account_name}`
-                    : tx.account_name }}</template>
-                </div>
-              </q-item-section>
-              <q-item-section side>
-                <div
-                  :class="['tx-row-amount', tx.type === 'ingreso' ? 'tx-positive' : tx.type === 'transferencia' ? 'tx-transfer' : '']"
-                >
-                  {{ tx.type === 'ingreso' ? '+' : tx.type === 'transferencia' ? '⇄ ' : '−' }}{{ tx.amount.toLocaleString('es-MX') }}
-                </div>
-              </q-item-section>
-            </q-item>
-          </q-slide-item>
-        </q-list>
+        <div
+          v-for="tx in group.transactions"
+          :key="tx.id"
+          v-touch-hold.mouse="() => openActions(tx)"
+          class="tx-row"
+          @click="startEdit(tx)"
+        >
+          <div class="tx-row-left">
+            <div class="tx-row-name">{{ tx.description || tx.category }}</div>
+            <div class="tx-row-sub">
+              {{ tx.category }}
+              <template v-if="tx.account_name"> · {{ tx.destination_account_name
+                ? `${tx.account_name} → ${tx.destination_account_name}`
+                : tx.account_name }}</template>
+            </div>
+          </div>
+          <div class="tx-row-right">
+            <div
+              :class="['tx-row-amount', tx.type === 'ingreso' ? 'tx-positive' : tx.type === 'transferencia' ? 'tx-transfer' : '']"
+            >
+              {{ tx.type === 'ingreso' ? '+' : tx.type === 'transferencia' ? '⇄ ' : '−' }}{{ tx.amount.toLocaleString('es-MX') }}
+            </div>
+          </div>
+        </div>
       </template>
     </template>
     <div v-else class="tx-empty">{{ $t('transactions.no_data') }}</div>
 
     <!-- Dialogs -->
     <TransactionForm v-model="showForm" :transaction="editingTransaction" @update:model-value="onFormClose" />
+
+    <!-- Action sheet (long press) -->
+    <q-bottom-sheet v-model="showActions" class="tx-action-sheet">
+      <div class="tx-action-handle" />
+      <div v-if="actionTarget" class="tx-action-label">
+        {{ actionTarget.description || actionTarget.category }}
+      </div>
+      <div
+        v-if="!actionTarget?.installment_plan_id"
+        class="tx-action-row"
+        @click="onActionEdit"
+      >
+        <i class="ti ti-edit tx-action-icon" />
+        <span>Editar</span>
+      </div>
+      <div class="tx-action-row tx-action-delete" @click="onActionDelete">
+        <i class="ti ti-trash tx-action-icon" />
+        <span>Eliminar</span>
+      </div>
+      <div style="height: env(safe-area-inset-bottom, 8px)" />
+    </q-bottom-sheet>
 
     <q-dialog v-model="showConfirm">
       <q-card style="min-width: 300px">
@@ -171,7 +179,9 @@ onMounted(async () => {
 
 const showForm           = ref(false)
 const showConfirm        = ref(false)
+const showActions        = ref(false)
 const toDelete           = ref(null)
+const actionTarget       = ref(null)
 const editingTransaction = ref(null)
 
 function startEdit(transaction) {
@@ -288,14 +298,19 @@ const dateRangeLabel = computed(() => {
   return ''
 })
 
-function onSlideEdit(tx, reset) {
-  reset()
-  startEdit(tx)
+function openActions(tx) {
+  actionTarget.value = tx
+  showActions.value = true
 }
 
-function onSlideDelete(tx, reset) {
-  reset()
-  confirmDelete(tx)
+function onActionEdit() {
+  showActions.value = false
+  startEdit(actionTarget.value)
+}
+
+function onActionDelete() {
+  showActions.value = false
+  confirmDelete(actionTarget.value)
 }
 
 function confirmDelete(transaction) {
@@ -357,24 +372,18 @@ function handleDelete() {
   margin-top: 8px;
 }
 
-.tx-group-list {
-  padding: 0;
-  background: transparent;
-}
-
-.tx-slide {
+.tx-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 6px 0;
   border-bottom: 0.5px solid #F1EFE8;
+  cursor: pointer;
+  user-select: none;
   &:last-of-type { border-bottom: none; }
 }
 
-.tx-row {
-  padding: 6px 0;
-  min-height: unset;
-  background: #fff;
-
-  :deep(.q-item__section--side) { padding-left: 8px; }
-}
-
+.tx-row-left { flex: 1; min-width: 0; }
 .tx-row-name {
   font-size: 14px;
   color: #1a1a18;
@@ -390,6 +399,11 @@ function handleDelete() {
   text-overflow: ellipsis;
 }
 
+.tx-row-right {
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+}
 .tx-row-amount { font-size: 14px; color: #1a1a18; }
 .tx-positive   { color: #3B6D11; }
 .tx-transfer   { color: #888780; }
@@ -400,4 +414,36 @@ function handleDelete() {
   color: #C8C6BE;
   padding: 32px 0;
 }
+
+// ── Action sheet ──────────────────────────────────────────────────────────────
+.tx-action-sheet {
+  :deep(.q-bottom-sheet) { border-radius: 20px 20px 0 0; }
+}
+.tx-action-handle {
+  width: 32px; height: 3px;
+  background: #E8E6E0; border-radius: 2px;
+  margin: 10px auto 0;
+}
+.tx-action-label {
+  font-size: 12px;
+  color: #C8C6BE;
+  text-align: center;
+  padding: 10px 20px 4px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.tx-action-row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 16px 24px;
+  font-size: 15px;
+  color: #1a1a18;
+  cursor: pointer;
+  user-select: none;
+  &:active { background: #F8F7F4; }
+}
+.tx-action-icon { font-size: 18px; color: #888780; }
+.tx-action-delete { color: #C0392B; .tx-action-icon { color: #C0392B; } }
 </style>
